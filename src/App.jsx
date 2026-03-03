@@ -7,6 +7,7 @@ import UserDashboardPage from './pages/UserDashboardPage/UserDashboardPage'
 import RegisterPage from './pages/RegisterPage/RegisterPage'
 import ErrorPage from './pages/ErrorPage/ErrorPage'
 import ProjectDetailPage from './pages/ProjectDetailPage/ProjectDetailPage'
+import DrawioEmbedded from './components/DrawioEmbedded/DrawioEmbedde'
 
 function AppContent() {
     return (
@@ -17,7 +18,7 @@ function AppContent() {
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/dashboard" element={<UserDashboardPage />} />
                 <Route path="/project/:projectId" element={<ProjectDetailPage />} />
-
+                
                 <Route path='*' element={<ErrorPage />} />
             </Routes>
         </Router>
