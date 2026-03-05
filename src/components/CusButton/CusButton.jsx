@@ -9,7 +9,7 @@ import "./CusButton.css"
  * @param {string} props.label - Nhãn hiển thị trên nút
  * @param {() => void} props.onClick - Hàm callback khi người dùng click
  * @param {boolean} [props.disabled=false] - Trạng thái disabled của nút
- * @param {'red-button'|'grey-button'|'blue-button'|'green-button'|'white-button'|'white-grey-button'|'gradient-blue-button'|'gradient-green-button'|'cancel-button'} props.color - Class màu của nút
+ * @param {'red-button'|'grey-button'|'blue-button'|'green-button'|'white-button'|'white-grey-button'|'gradient-blue-button'|'gradient-green-button'|'dashed-text-button'} props.color - Class màu của nút
  * @param {'button'|'submit'|'reset'} [props.type] - Loại button (HTML type)
  * @param {boolean} [props.loading=false] - Nếu true thì hiển thị spinner thay vì label
  *

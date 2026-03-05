@@ -98,13 +98,13 @@
   opacity: 0.9;
 }
 
-.cancel-button {
+.dashed-text-button {
   background: none;
   color: black;
   text-decoration: underline;
 }
 
-.cancel-button:hover:not(:disabled) {
+.dashed-text-button:hover:not(:disabled) {
   background: rgba(0, 0, 0, 0.05);
 }
 

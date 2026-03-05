@@ -21,6 +21,9 @@ export default function LoginPage() {
                             loading={false}
                         />
 
+                        <p>
+                            Chưa có Tài khoản?
+                        </p>
                         <CusButton
                             color="gradient-green-button"
                             label="Register"
@@ -29,7 +32,7 @@ export default function LoginPage() {
                         />
 
                         <CusButton
-                            color="cancel-button"
+                            color="dashed-text-button"
                             label="Cancel"
                             onClick={() => navigate("/")}
                         />

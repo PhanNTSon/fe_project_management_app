@@ -5,28 +5,93 @@ import "./ProjectTable.css"
 import "./DashboardHeader.css"
 import "./AddProjectPopup.css"
 import "./DeleteConfirmPopup.css"
+import { useNavigate } from "react-router-dom"
 
 export default function UserDashboardPage() {
 
     const [isPopupOpen, setIsPopupOpen] = useState(false)
+    const [isDeleteOpen, setIsDeleteOpen] = useState(false)
+
+    const [projects, setProjects] = useState([
+        { id: 1, name: "E-Commerce Platform", description: "Online shopping system", status: "Active" },
+        { id: 2, name: "Healthcare System", description: "Patient & billing system", status: "Active" },
+        { id: 3, name: "Student Information System", description: "Manage students lifecycle", status: "Archived" },
+        { id: 4, name: "Student Information System", description: "Manage students lifecycle", status: "Archived" },
+        { id: 5, name: "Student Information System", description: "Manage students lifecycle", status: "Archived" },
+        { id: 6, name: "Student Information System", description: "Manage students lifecycle", status: "Archived" },
+        { id: 7, name: "Student Information System", description: "Manage students lifecycle", status: "Archived" },
+        { id: 8, name: "Student Information System", description: "Manage students lifecycle", status: "Archived" },
+        { id: 9, name: "Student Information System", description: "Manage students lifecycle", status: "Archived" },
+        { id: 10, name: "Student Information System", description: "Manage students lifecycle", status: "Archived" },
+    ])
+
+    const [selectedProjects, setSelectedProjects] = useState([])
+
+    const handleSelect = (project) => {
+        setSelectedProjects(prev => {
+            const exists = prev.find(p => p.id === project.id)
+            if (exists) {
+                return prev.filter(p => p.id !== project.id)
+            }
+            return [...prev, project]
+        })
+    }
+
+    const handleDelete = () => {
+        setProjects(prev =>
+            prev.filter(p => !selectedProjects.some(sp => sp.id === p.id))
+        )
+        setSelectedProjects([])
+        setIsDeleteOpen(false)
+    }
 
     return (
         <div id="dashboard-page">
 
-            {/* ===== BACKGROUND LAYER ===== */}
+            {/* BACKGROUND */}
             <div className="layer background-layer"></div>
 
-            {/* ===== HEADER LAYER ===== */}
+            {/* HEADER */}
             <div className="layer header-layer">
-                <DashboardHeader />
+                <DashboardHeader total={projects.length} />
             </div>
 
-            {/* ===== CONTENT LAYER ===== */}
+            {/* CONTENT */}
             <div className="layer content-layer">
+
                 <div className="content-wrapper">
-                    <ProjectTable
-                        onAdd={() => setIsPopupOpen(true)}
-                    />
+
+                    <div className="top-bar">
+                        <span className="total-text">
+                            Total Projects: <strong>{projects.length}</strong>
+                        </span>
+
+                        <div className="actions">
+                            <CusButton
+                                color="red-button"
+                                label="Delete"
+                                disabled={selectedProjects.length === 0}
+                                onClick={() => setIsDeleteOpen(true)}
+                            />
+                            <CusButton
+                                color="gradient-blue-button"
+                                label={<><span className="material-symbols-outlined">add</span> Add Project</>}
+                                onClick={() => setIsPopupOpen(true)}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="card-grid">
+                        {projects.map(project => (
+                            <ProjectCard
+                                key={project.id}
+                                project={project}
+                                selected={selectedProjects.some(p => p.id === project.id)}
+                                onSelect={() => handleSelect(project)}
+                            />
+                        ))}
+                    </div>
+
                 </div>
             </div>
 
@@ -37,13 +102,26 @@ export default function UserDashboardPage() {
                 />
             </div>
 
+            {/* DELETE POPUP */}
+            {isDeleteOpen && (
+                <DeleteConfirmPopup
+                    projects={selectedProjects}
+                    onClose={() => setIsDeleteOpen(false)}
+                    onConfirm={handleDelete}
+                />
+            )}
+
         </div>
     )
 }
-
-function DashboardHeader() {
+function DashboardHeader({ total }) {
     return (
         <div id="dashboard-header">
+            <div className="title-group">
+                <h1>SRS Management System</h1>
+                <p>Manage your software requirement projects</p>
+            </div>
+
             <div className="profile-circle"></div>
         </div>
     )
@@ -285,12 +363,45 @@ function AddProjectPopup({ onClose }) {
                         onClick={() => { }}
                     />
                     <CusButton
-                        color="cancel-button"
+                        color="dashed-text-button"
                         label="Cancel"
                         onClick={onClose}
                     />
                 </div>
 
+            </div>
+        </div>
+    )
+}
+
+function ProjectCard({ project, selected, onSelect }) {
+
+    const navigate = useNavigate();
+
+    return (
+        <div className={`project-card ${selected ? "selected" : ""}`}>
+
+            <div className="card-header">
+                <input
+                    type="checkbox"
+                    checked={selected}
+                    onChange={onSelect}
+                />
+                <h3>{project.name}</h3>
+            </div>
+
+            <p className="description">{project.description}</p>
+
+            <div className="card-footer">
+                <span className={`status ${project.status.toLowerCase()}`}>
+                    {project.status}
+                </span>
+
+                <CusButton
+                    color="dashed-text-button"
+                    label="View Details"
+                    onClick={() => navigate(`/projects/${project.id}`)}
+                />
             </div>
         </div>
     )

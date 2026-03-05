@@ -26,6 +26,9 @@ export default function RegisterPage() {
                             loading={false}
                         />
 
+                        <p>
+                            Đã có Tài khoản?
+                        </p>
                         <CusButton
                             color="gradient-green-button"
                             label="Login"
@@ -34,7 +37,7 @@ export default function RegisterPage() {
                         />
 
                         <CusButton
-                            color="cancel-button"
+                            color="dashed-text-button"
                             label="Cancel"
                             onClick={() => navigate("/")}
                         />
