@@ -7,6 +7,11 @@
   font: inherit;
   max-width: 150px;
   min-width: 60px;
+  display: flex;
+  justify-content: center;
+  flex-direction: row;
+  align-items: center;
+  gap: 15%;
 
   white-space: nowrap;
   overflow: hidden;

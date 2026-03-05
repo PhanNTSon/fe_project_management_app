@@ -74,7 +74,7 @@ function ProjectTable({ onAdd }) {
 
             <CusButton
                 color="gradient-green-button"
-                label="Add"
+                label={<><span className="material-symbols-outlined">add</span> add</>}
                 onClick={onAdd}
             />
             <CusButton

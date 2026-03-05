@@ -29,7 +29,11 @@ export default function CusButton({ label, onClick, disabled, color, type, loadi
             className={`base-button ${color}`}
             type={type || "button"}
         >
-            {loading ? <span className="custom-spinner" /> : label}
+            {loading ? (
+                <span className="spinner"></span>
+            ) : (
+                label
+            )}
         </button>
     )
 }
