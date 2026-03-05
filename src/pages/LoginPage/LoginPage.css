@@ -1,0 +1,84 @@
+#login-page {
+    position: relative;
+    width: 100%;
+    min-height: 100vh;
+    overflow: hidden;
+}
+
+/* ===== LAYER SYSTEM ===== */
+
+#login-page .layer {
+    position: absolute;
+    inset: 0;
+}
+
+/* ===== BACKGROUND ===== */
+
+#background {
+    z-index: 0;
+    background: linear-gradient(120deg, #d4fc79 0%, #96e6a1 100%);
+}
+
+/* ===== CONTENT LAYER ===== */
+
+#login-box-container {
+    z-index: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* ===== LOGIN BOX ===== */
+
+#login-box {
+    width: 420px;
+    padding: 40px 30px;
+    background-color: #a9c9c7;
+    border-radius: 25px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+}
+
+#login-box h1 {
+    font-size: 20px;
+    letter-spacing: 2px;
+    font-weight: 600;
+}
+
+/* ===== INPUT ===== */
+
+#login-box input {
+    width: 100%;
+    padding: 12px 20px;
+    border-radius: 25px;
+    border: none;
+    outline: none;
+    font-size: 14px;
+    background: #f2f2f2;
+}
+
+/* ===== BUTTON GROUP ===== */
+
+#login-box .button-group {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+/* Register giống link */
+
+.register-link {
+    background: none;
+    border: none;
+    font-size: 14px;
+    text-decoration: underline;
+    cursor: pointer;
+    color: black;
+}
