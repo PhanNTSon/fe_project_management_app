@@ -12,7 +12,7 @@ export default function LoginPage() {
                 <div id="login-box">
                     <h1>Login</h1>
                     <input type="text" placeholder="Username" />
-                    <input type="text" placeholder="Password" />
+                    <input type="password" placeholder="Password" />
                     <div className="button-group">
                         <CusButton
                             color="gradient-blue-button"
