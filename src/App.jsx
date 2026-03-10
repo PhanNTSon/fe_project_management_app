@@ -7,15 +7,38 @@ import UserDashboardPage from './pages/UserDashboardPage/UserDashboardPage'
 import RegisterPage from './pages/RegisterPage/RegisterPage'
 import ErrorPage from './pages/ErrorPage/ErrorPage'
 import ProjectDetailPage from './pages/ProjectDetailPage/ProjectDetailPage'
+import { AppProvider } from './context/AppContext'
+import GuestRoute from './components/GuestRoute'
+import ProtectedRoute from './components/ProtectedRoute'
 
 function AppContent() {
     return (
         <Routes>
-            <Route path="/" element={<LandingPage />} />
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
-            <Route path="/dashboard" element={<UserDashboardPage />} />
-            <Route path="/project/:projectId" element={<ProjectDetailPage />} />
+            <Route path="/" element={
+                <GuestRoute>
+                    <LandingPage />
+                </GuestRoute>
+            } />
+            <Route path="/login" element={
+                <GuestRoute>
+                    <LoginPage />
+                </GuestRoute>
+            } />
+            <Route path="/register" element={
+                <GuestRoute>
+                    <RegisterPage />
+                </GuestRoute>
+            } />
+            <Route path="/dashboard" element={
+                <ProtectedRoute>
+                    <UserDashboardPage />
+                </ProtectedRoute>
+            } />
+            <Route path="/project/:projectId" element={
+                <ProtectedRoute>
+                    <ProjectDetailPage />
+                </ProtectedRoute>
+            } />
 
             <Route path='*' element={<ErrorPage />} />
         </Routes>
@@ -24,9 +47,12 @@ function AppContent() {
 
 function App() {
     return (
-        <BrowserRouter>
-            <AppContent />
-        </BrowserRouter>
+        <AppProvider>
+            <BrowserRouter>
+                <AppContent />
+            </BrowserRouter>
+        </AppProvider>
+
     )
 }
 
