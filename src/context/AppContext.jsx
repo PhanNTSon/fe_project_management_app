@@ -4,35 +4,12 @@ import { refreshToken } from "../api/authService";
 export const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
-    const [user, setUser] = useState(null);
-    const [jwt, setJwt] = useState(null);
-    const [authLoading, setAuthLoading] = useState(true);
+    const [user, setUser] = useState({ fullName: "Demo User", username: "demo1" });
+    const [jwt, setJwt] = useState("dummy_token");
+    const [authLoading, setAuthLoading] = useState(false);
 
     useEffect(() => {
-
-        const bootstrapAuth = async () => {
-            try {
-                const data = await refreshToken();
-                console.log("Bootstrap auth success:", data);
-                setJwt(data.accessToken);
-
-                // nếu BE trả user info thì set luôn
-                // setUser(data.user);
-
-            } catch (err) {
-
-                setJwt(null)
-                console.log("Bootstrap auth failed:", err)
-
-            } finally {
-
-                setAuthLoading(false)
-
-            }
-        };
-
-        bootstrapAuth();
-
+        // Mocked for demo
     }, []);
 
     return (
