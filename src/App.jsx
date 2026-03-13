@@ -61,25 +61,25 @@ function App() {
           <Route path="/dashboard" element={<ProtectedRoute><UserDashboard /></ProtectedRoute>} />
           <Route path="/projects" element={<ProtectedRoute><ProjectList /></ProtectedRoute>} />
           <Route path="/projects/new" element={<ProtectedRoute><CreateProjectPage /></ProtectedRoute>} />
-          <Route path="/projects/detail" element={<ProtectedRoute><ProjectDetailOverviewPage /></ProtectedRoute>} />
-          <Route path="/projects/settings" element={<ProtectedRoute><ProjectSettingsPage /></ProtectedRoute>} />
-          <Route path="/projects/members" element={<ProtectedRoute><ProjectMembersPage /></ProtectedRoute>} />
+          <Route path="/projects/:projectId" element={<ProtectedRoute><ProjectDetailOverviewPage /></ProtectedRoute>} />
+          <Route path="/projects/:projectId/settings" element={<ProtectedRoute><ProjectSettingsPage /></ProtectedRoute>} />
+          <Route path="/projects/:projectId/members" element={<ProtectedRoute><ProjectMembersPage /></ProtectedRoute>} />
 
           {/* Protected Requirement / Document Routes */}
-          <Route path="/requirements" element={<ProtectedRoute><RequirementManagementPage /></ProtectedRoute>} />
-          <Route path="/srs-editor" element={<ProtectedRoute><SrsDocumentEditorPage /></ProtectedRoute>} />
-          <Route path="/diagram-editor" element={<ProtectedRoute><DiagramEditorPage /></ProtectedRoute>} />
-          <Route path="/use-case-builder" element={<ProtectedRoute><UseCaseBuilderPage /></ProtectedRoute>} />
-          <Route path="/export" element={<ProtectedRoute><ExportDocumentPage /></ProtectedRoute>} />
-          <Route path="/files" element={<ProtectedRoute><FileManagerPage /></ProtectedRoute>} />
+          <Route path="/projects/:projectId/requirements" element={<ProtectedRoute><RequirementManagementPage /></ProtectedRoute>} />
+          <Route path="/projects/:projectId/srs-editor" element={<ProtectedRoute><SrsDocumentEditorPage /></ProtectedRoute>} />
+          <Route path="/projects/:projectId/diagram-editor" element={<ProtectedRoute><DiagramEditorPage /></ProtectedRoute>} />
+          <Route path="/projects/:projectId/use-case-builder" element={<ProtectedRoute><UseCaseBuilderPage /></ProtectedRoute>} />
+          <Route path="/projects/:projectId/export" element={<ProtectedRoute><ExportDocumentPage /></ProtectedRoute>} />
+          <Route path="/projects/:projectId/files" element={<ProtectedRoute><FileManagerPage /></ProtectedRoute>} />
 
           {/* Protected Collaboration Routes */}
-          <Route path="/comments" element={<ProtectedRoute><CommentDiscussionPage /></ProtectedRoute>} />
-          <Route path="/reviews" element={<ProtectedRoute><ReviewApprovalPage /></ProtectedRoute>} />
-          <Route path="/invite" element={<ProtectedRoute><InviteMembersPage /></ProtectedRoute>} />
-          <Route path="/compare" element={<ProtectedRoute><CompareVersionsPage /></ProtectedRoute>} />
-          <Route path="/history" element={<ProtectedRoute><ChangeHistoryPage /></ProtectedRoute>} />
-          <Route path="/activity" element={<ProtectedRoute><ActivityLogPage /></ProtectedRoute>} />
+          <Route path="/projects/:projectId/comments" element={<ProtectedRoute><CommentDiscussionPage /></ProtectedRoute>} />
+          <Route path="/projects/:projectId/reviews" element={<ProtectedRoute><ReviewApprovalPage /></ProtectedRoute>} />
+          <Route path="/projects/:projectId/invite" element={<ProtectedRoute><InviteMembersPage /></ProtectedRoute>} />
+          <Route path="/projects/:projectId/compare" element={<ProtectedRoute><CompareVersionsPage /></ProtectedRoute>} />
+          <Route path="/projects/:projectId/history" element={<ProtectedRoute><ChangeHistoryPage /></ProtectedRoute>} />
+          <Route path="/projects/:projectId/activity" element={<ProtectedRoute><ActivityLogPage /></ProtectedRoute>} />
 
           {/* Protected User & Settings Routes */}
           <Route path="/profile" element={<ProtectedRoute><UserProfileSettingsPage /></ProtectedRoute>} />

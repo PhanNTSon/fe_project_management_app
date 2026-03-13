@@ -1,15 +1,40 @@
 import { createContext, useState, useEffect } from "react";
 import { refreshToken } from "../api/authService";
+import { setAuthToken } from "../api/axiosClient";
 
 export const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
-    const [user, setUser] = useState({ fullName: "Demo User", username: "demo1" });
-    const [jwt, setJwt] = useState("dummy_token");
-    const [authLoading, setAuthLoading] = useState(false);
+    const [user, setUser] = useState(null);
+    const [jwt, setJwt] = useState(null);
+    const [authLoading, setAuthLoading] = useState(true);
 
     useEffect(() => {
-        // Mocked for demo
+
+        const bootstrapAuth = async () => {
+            try {
+                const data = await refreshToken();
+                console.log("Bootstrap auth success:", data);
+                setAuthToken(data.accessToken); // ✅ inject Bearer token vào axios headers
+                setJwt(data.accessToken);
+
+                // nếu BE trả user info thì set luôn
+                // setUser(data.user);
+
+            } catch (err) {
+
+                setJwt(null)
+                console.log("Bootstrap auth failed:", err)
+
+            } finally {
+
+                setAuthLoading(false)
+
+            }
+        };
+
+        bootstrapAuth();
+
     }, []);
 
     return (
