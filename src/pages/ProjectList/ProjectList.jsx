@@ -4,6 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { getMyProjects, deleteProject } from '../../api/projectService';
 import { AppContext } from '../../context/AppContext';
+import { parseApiError, logApiError } from '../../api/apiErrorUtils';
 
 const ProjectList = () => {
     const navigate = useNavigate();
@@ -11,6 +12,7 @@ const ProjectList = () => {
     const [projects, setProjects] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [deleteError, setDeleteError] = useState(null);
     const [deletingId, setDeletingId] = useState(null);
 
     const fetchProjects = async () => {
@@ -20,8 +22,8 @@ const ProjectList = () => {
             const data = await getMyProjects();
             setProjects(data);
         } catch (err) {
-            setError('Failed to load projects. Please try again.');
-            console.error(err);
+            logApiError(err, 'ProjectList.fetchProjects');
+            setError(parseApiError(err, 'Không thể tải danh sách dự án. Vui lòng thử lại.'));
         } finally {
             setLoading(false);
         }
@@ -36,11 +38,12 @@ const ProjectList = () => {
         if (!window.confirm('Are you sure you want to delete this project?')) return;
         try {
             setDeletingId(projectId);
+            setDeleteError(null);
             await deleteProject(projectId);
             setProjects(prev => prev.filter(p => p.projectId !== projectId));
         } catch (err) {
-            alert('Failed to delete project.');
-            console.error(err);
+            logApiError(err, 'ProjectList.handleDelete');
+            setDeleteError(parseApiError(err, 'Không thể xóa dự án. Vui lòng thử lại.'));
         } finally {
             setDeletingId(null);
         }
@@ -100,6 +103,17 @@ const ProjectList = () => {
                         <p className="text-slate-500">{error}</p>
                         <button onClick={fetchProjects} className="px-4 py-2 rounded-lg bg-primary text-white text-sm font-semibold">
                             Retry
+                        </button>
+                    </div>
+                )}
+
+                {/* Delete error toast */}
+                {deleteError && (
+                    <div className="flex items-center gap-3 p-4 mb-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 text-sm">
+                        <span className="material-symbols-outlined text-lg flex-shrink-0">error</span>
+                        <span className="flex-1">{deleteError}</span>
+                        <button onClick={() => setDeleteError(null)} className="text-red-400 hover:text-red-600">
+                            <span className="material-symbols-outlined text-lg">close</span>
                         </button>
                     </div>
                 )}

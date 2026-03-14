@@ -9,7 +9,7 @@ export const getMyProjects = async () => {
 };
 
 export const createProject = async ({ projectName, description }) => {
-    const resp = await api.post(BASE, { projectName, description });
+    const resp = await api.post(BASE, { projectName: projectName, description: description });
     return resp.data; // ResponseProjectListDto
 };
 

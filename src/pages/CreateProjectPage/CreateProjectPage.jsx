@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { createProject } from '../../api/projectService';
+import { parseApiError, logApiError } from '../../api/apiErrorUtils';
 
 const CreateProjectPage = () => {
     const navigate = useNavigate();
@@ -31,9 +32,8 @@ const CreateProjectPage = () => {
             const newProject = await createProject({ projectName: projectName.trim(), description: description.trim() });
             navigate(`/projects/${newProject.projectId}`);
         } catch (err) {
-            console.error(err);
-            const msg = err.response?.data?.message || 'Failed to create project. Please try again.';
-            setError(msg);
+            logApiError(err, 'CreateProjectPage');
+            setError(parseApiError(err, 'Không thể tạo dự án. Vui lòng thử lại.'));
         } finally {
             setSubmitting(false);
         }

@@ -1,5 +1,5 @@
 import { createContext, useState, useEffect } from "react";
-import { refreshToken } from "../api/authService";
+import { refreshToken, getProfile } from "../api/authService";
 import { setAuthToken } from "../api/axiosClient";
 
 export const AppContext = createContext();
@@ -11,29 +11,71 @@ export const AppProvider = ({ children }) => {
 
     useEffect(() => {
 
+        let isMounted = true; // Track nếu component còn mounted
+
         const bootstrapAuth = async () => {
             try {
-                const data = await refreshToken();
-                console.log("Bootstrap auth success:", data);
-                setAuthToken(data.accessToken); // ✅ inject Bearer token vào axios headers
-                setJwt(data.accessToken);
+                // Step 1: Try to refresh token using httpOnly cookie
+                const tokenData = await refreshToken();
 
-                // nếu BE trả user info thì set luôn
-                // setUser(data.user);
+                // ✅ Chỉ update state nếu component còn mounted (prevent memory leak)
+                if (!isMounted) {
+                    console.log("[AppContext] Component unmounted, skipping state update");
+                    return;
+                }
+
+                console.log("[AppContext] Bootstrap auth success, token:", tokenData.accessToken.substring(0, 20) + "...");
+                setAuthToken(tokenData.accessToken); // ✅ inject Bearer token vào axios headers
+                setJwt(tokenData.accessToken);
+
+                // Step 2: Fetch user profile data
+                try {
+                    const userProfileData = await getProfile();
+
+                    if (isMounted) {
+                        setUser({
+                            userId: userProfileData.userId,
+                            username: userProfileData.username,
+                            fullName: userProfileData.fullName,
+                            email: userProfileData.email,
+                            isActive: userProfileData.isActive
+                        });
+                        console.log("[AppContext] User profile loaded:", userProfileData.username);
+                    }
+                } catch (profileErr) {
+                    if (isMounted) {
+                        console.error("[AppContext] Failed to load user profile:", profileErr);
+                        // Keep jwt but leave user as null if profile fetch fails
+                    }
+                }
 
             } catch (err) {
 
+                if (!isMounted) {
+                    console.log("[AppContext] Component unmounted, skipping error handling");
+                    return;
+                }
+
                 setJwt(null)
-                console.log("Bootstrap auth failed:", err)
+                setUser(null)
+                console.error("[AppContext] Bootstrap auth failed:", err.response?.status, err.response?.data)
 
             } finally {
 
-                setAuthLoading(false)
+                if (isMounted) {
+                    setAuthLoading(false)
+                }
 
             }
         };
 
         bootstrapAuth();
+
+        // ✅ Cleanup: Mark component as unmounted (React Strict Mode)
+        return () => {
+            isMounted = false;
+            console.log("[AppContext] Component cleanup (Strict Mode unmount)");
+        };
 
     }, []);
 

@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { getMyProjects } from '../../api/projectService';
+import { parseApiError, logApiError } from '../../api/apiErrorUtils';
 
 const ProjectDetailOverviewPage = () => {
     const navigate = useNavigate();
@@ -23,8 +24,8 @@ const ProjectDetailOverviewPage = () => {
                     setProject(found);
                 }
             } catch (err) {
-                setError('Failed to load project.');
-                console.error(err);
+                logApiError(err, 'ProjectDetailOverviewPage.fetchProject');
+                setError(parseApiError(err, 'Không thể tải thông tin dự án. Vui lòng thử lại.'));
             } finally {
                 setLoading(false);
             }
@@ -124,13 +125,10 @@ const ProjectDetailOverviewPage = () => {
                         {/* Quick Navigation Cards */}
                         <div>
                             <h4 className="font-bold text-lg mb-4">Quick Access</h4>
-                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 {[
-                                    { label: 'Requirements', icon: 'checklist', path: `/projects/${projectId}/requirements`, color: 'text-blue-600 bg-blue-50 dark:bg-blue-900/30' },
-                                    { label: 'Use Case Builder', icon: 'account_tree', path: `/projects/${projectId}/use-case-builder`, color: 'text-purple-600 bg-purple-50 dark:bg-purple-900/30' },
-                                    { label: 'SRS Editor', icon: 'description', path: `/projects/${projectId}/srs-editor`, color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30' },
-                                    { label: 'Review & Approval', icon: 'rate_review', path: `/projects/${projectId}/reviews`, color: 'text-amber-600 bg-amber-50 dark:bg-amber-900/30' },
                                     { label: 'Members', icon: 'group', path: `/projects/${projectId}/members`, color: 'text-rose-600 bg-rose-50 dark:bg-rose-900/30' },
+                                    { label: 'SRS Editor', icon: 'description', path: `/projects/${projectId}/srs-editor`, color: 'text-emerald-600 bg-emerald-50 dark:bg-emerald-900/30' },
                                     { label: 'Settings', icon: 'settings', path: `/projects/${projectId}/settings`, color: 'text-slate-600 bg-slate-100 dark:bg-slate-800' },
                                 ].map(item => (
                                     <button

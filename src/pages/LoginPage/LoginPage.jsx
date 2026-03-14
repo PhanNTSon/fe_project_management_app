@@ -1,9 +1,10 @@
 import './LoginPage.css';
 import React, { useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { login } from "../../api/authService";
+import { login, getProfile } from "../../api/authService";
 import { setAuthToken } from "../../api/axiosClient";
 import { AppContext } from "../../context/AppContext";
+import { parseApiError, logApiError } from "../../api/apiErrorUtils";
 
 const LoginPage = () => {
   const [username, setUsername] = useState('');
@@ -19,30 +20,36 @@ const LoginPage = () => {
     if (loading) return;
     setLoading(true);
     setError(null);
-    
+
     try {
-      const respData = await login({ username, password });
-      
-      if (respData && respData.accessToken) {
-        setJwt(respData.accessToken);
-        setAuthToken(respData.accessToken);
+      // Step 1: Login - get tokens
+      const loginResp = await login({ username, password });
+
+      if (loginResp && loginResp.accessToken) {
+        // Step 2: Set token in context and axios headers
+        setJwt(loginResp.accessToken);
+        setAuthToken(loginResp.accessToken);
+
+        // Step 3: Fetch user profile
+        const userProfileData = await getProfile();
+
+        // Step 4: Set user data in context
         setUser({
-          username: respData.username,
-          fullName: respData.fullName,
-          email: respData.email
+          userId: userProfileData.userId,
+          username: userProfileData.username,
+          fullName: userProfileData.fullName,
+          email: userProfileData.email,
+          isActive: userProfileData.isActive
         });
+
+        // Step 5: Navigate to dashboard
         navigate("/dashboard");
       } else {
         setError('Login failed. No token received.');
       }
     } catch (err) {
-      if (err.response) {
-        setError(err.response.data?.message || "Login failed");
-      } else if (err.request) {
-        setError("Server not responding");
-      } else {
-        setError(err.message);
-      }
+      logApiError(err, 'LoginPage');
+      setError(parseApiError(err));
     } finally {
       setLoading(false);
     }

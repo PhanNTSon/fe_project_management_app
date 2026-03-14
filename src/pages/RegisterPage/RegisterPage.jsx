@@ -3,6 +3,7 @@ import React, { useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { register } from '../../api/authService';
 import { AppContext } from '../../context/AppContext';
+import { parseApiError, logApiError } from '../../api/apiErrorUtils';
 
 const RegisterPage = () => {
   const [username, setUsername] = useState('');
@@ -40,14 +41,8 @@ const RegisterPage = () => {
       console.log(resp);
       navigate("/login");
     } catch (err) {
-      if (err.response) {
-        console.error(err.response.data);
-        setError(err.response.data?.message || "Register failed");
-      } else if (err.request) {
-        setError("Server not responding");
-      } else {
-        setError(err.message);
-      }
+      logApiError(err, 'RegisterPage');
+      setError(parseApiError(err));
     } finally {
       setLoading(false);
     }
