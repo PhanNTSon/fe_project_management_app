@@ -194,14 +194,83 @@ export default function SrsDocumentEditorPage() {
         setShowConfirmModal(false);
         setSaving(true);
         try {
-            // Build change items for all modified entities
             const items = [];
 
-            // Track usecases changes
+            // Helper: build change items for a simple list entity
+            const trackListChanges = (origList, editedList, idKey, entityType) => {
+                editedList.forEach((item) => {
+                    const orig = origList.find(o => o[idKey] === item[idKey]);
+                    if (orig && JSON.stringify(orig) !== JSON.stringify(item)) {
+                        // UPDATE existing item
+                        items.push({
+                            entityType,
+                            entityId: item[idKey],
+                            operation: "UPDATE",
+                            fieldName: "all",
+                            oldValue: JSON.stringify(orig),
+                            newValue: JSON.stringify(item),
+                        });
+                    } else if (!orig && String(item[idKey]).startsWith('temp-')) {
+                        // CREATE new item — strip the temp ID
+                        const payload = { ...item };
+                        delete payload[idKey];
+                        items.push({
+                            entityType,
+                            entityId: null,
+                            operation: "CREATE",
+                            fieldName: "all",
+                            oldValue: "{}",
+                            newValue: JSON.stringify(payload),
+                        });
+                    }
+                });
+                origList.forEach((orig) => {
+                    if (!editedList.find(e => e[idKey] === orig[idKey])) {
+                        // DELETE removed item
+                        items.push({
+                            entityType,
+                            entityId: orig[idKey],
+                            operation: "DELETE",
+                            fieldName: "all",
+                            oldValue: JSON.stringify(orig),
+                            newValue: "{}",
+                        });
+                    }
+                });
+            };
+
+            // Track VisionScope changes
+            trackListChanges(origVision, editedVision, 'visionScopeId', 'VISION_SCOPE');
+
+            // Track Constraint changes
+            trackListChanges(origConstraints, editedConstraints, 'constraintId', 'CONSTRAINT');
+
+            // Track BusinessRule changes
+            trackListChanges(origBusiness, editedBusiness, 'ruleId', 'BUSINESS_RULE');
+
+            // Track FunctionalRequirement changes
+            trackListChanges(origFunctional, editedFunctional, 'requirementId', 'FUNCTIONAL_REQ');
+
+            // Track NonFunctionalRequirement changes (fixed 4 categories — only UPDATE allowed)
+            editedNonFunctional.forEach((nfr) => {
+                // Ignore temp-id items (category has no real DB record yet — skip CREATE for NFR)
+                if (String(nfr.requirementId).startsWith('temp-')) return;
+                const orig = origNonFunctional.find(o => o.requirementId === nfr.requirementId);
+                if (orig && JSON.stringify(orig) !== JSON.stringify(nfr)) {
+                    items.push({
+                        entityType: "NON_FUNCTIONAL_REQ",
+                        entityId: nfr.requirementId,
+                        operation: "UPDATE",
+                        fieldName: "description",
+                        oldValue: JSON.stringify(orig),
+                        newValue: JSON.stringify(nfr),
+                    });
+                }
+            });
+
+            // Track Usecase changes
             editedUsecases.forEach((uc) => {
                 const origUc = origUsecases.find(u => u.usecaseId === uc.usecaseId);
-
-                // Only include if it's an existing usecase (has real ID) AND has actual changes
                 if (origUc && JSON.stringify(origUc) !== JSON.stringify(uc)) {
                     items.push({
                         entityType: "USECASE",
@@ -209,24 +278,21 @@ export default function SrsDocumentEditorPage() {
                         operation: "UPDATE",
                         fieldName: "all",
                         oldValue: JSON.stringify(origUc),
-                        newValue: JSON.stringify(uc)
+                        newValue: JSON.stringify(uc),
                     });
                 } else if (!origUc && String(uc.usecaseId).startsWith('temp-')) {
-                    // New usecase - strip temp ID before sending
-                    const newUsecaseData = { ...uc };
-                    delete newUsecaseData.usecaseId;
+                    const payload = { ...uc };
+                    delete payload.usecaseId;
                     items.push({
                         entityType: "USECASE",
                         entityId: null,
                         operation: "CREATE",
                         fieldName: "all",
                         oldValue: "{}",
-                        newValue: JSON.stringify(newUsecaseData)
+                        newValue: JSON.stringify(payload),
                     });
                 }
             });
-
-            // Check for deleted usecases
             origUsecases.forEach((origUc) => {
                 if (!editedUsecases.find(u => u.usecaseId === origUc.usecaseId)) {
                     items.push({
@@ -235,12 +301,11 @@ export default function SrsDocumentEditorPage() {
                         operation: "DELETE",
                         fieldName: "all",
                         oldValue: JSON.stringify(origUc),
-                        newValue: "{}"
+                        newValue: "{}",
                     });
                 }
             });
 
-            // If no changes, skip
             if (items.length === 0) {
                 alert("No changes to save");
                 setSaving(false);
@@ -250,11 +315,11 @@ export default function SrsDocumentEditorPage() {
             const payload = {
                 title: "SRS Updates",
                 description: "Updates from SRS Editor",
-                items: items
+                items,
             };
 
-            console.log("🔷 ChangeRequest Items:", items);
-            console.log("🔷 Full Payload:", payload);
+            console.log("ChangeRequest Items:", items);
+            console.log("Full Payload:", payload);
 
             await createChangeRequest(projectId, payload);
             alert(AUTO_APPROVE_ROLES.includes(role) ? "Records saved successfully!" : "Change Request submitted successfully!");
@@ -387,10 +452,20 @@ export default function SrsDocumentEditorPage() {
                                 <label className="block text-xs font-bold text-slate-500 uppercase mb-2">1.2 Constraints</label>
                                 <div className="space-y-2">
                                     {editedConstraints.map(c => (
-                                        <div key={c.constraintId} className="flex gap-2">
+                                        <div key={c.constraintId} className="flex gap-2 items-center">
+                                            <select
+                                                className="text-xs border-slate-300 rounded text-slate-600 focus:border-primary focus:ring-1 focus:ring-primary shadow-sm w-[130px] shrink-0"
+                                                value={c.type || 'TECHNICAL'}
+                                                onChange={e => updateListItem(setEditedConstraints, editedConstraints, 'constraintId', c.constraintId, 'type', e.target.value)}
+                                            >
+                                                <option value="TECHNICAL">TECHNICAL</option>
+                                                <option value="BUSINESS">BUSINESS</option>
+                                                <option value="REGULATORY">REGULATORY</option>
+                                            </select>
                                             <input
                                                 className="flex-1 text-sm border-slate-300 rounded text-slate-700 focus:border-primary focus:ring-1 focus:ring-primary shadow-sm"
                                                 value={c.description}
+                                                placeholder="Constraint description..."
                                                 onChange={e => updateListItem(setEditedConstraints, editedConstraints, 'constraintId', c.constraintId, 'description', e.target.value)}
                                             />
                                             <button onClick={() => removeListItem(setEditedConstraints, editedConstraints, 'constraintId', c.constraintId)} className="text-rose-400 hover:text-rose-600 bg-rose-50 px-2 rounded border border-rose-100">
@@ -398,7 +473,7 @@ export default function SrsDocumentEditorPage() {
                                             </button>
                                         </div>
                                     ))}
-                                    <button onClick={() => addListItem(setEditedConstraints, editedConstraints, { constraintId: 'temp-' + Date.now(), description: '' })} className="text-primary text-xs font-semibold flex items-center gap-1 hover:underline mt-1">
+                                    <button onClick={() => addListItem(setEditedConstraints, editedConstraints, { constraintId: 'temp-' + Date.now(), type: 'TECHNICAL', description: '' })} className="text-primary text-xs font-semibold flex items-center gap-1 hover:underline mt-1">
                                         <span className="material-symbols-outlined text-[16px]">add</span> Add Constraint
                                     </button>
                                 </div>

@@ -9,9 +9,8 @@ export default function UsecaseModal({ usecase, businessRules = [], functionalRe
     const [priority, setPriority] = useState(usecase?.priority || 'MEDIUM');
     const [exceptions, setExceptions] = useState(usecase?.exceptions || '');
 
-    // Additional conceptual fields mapped to the UI
+    // Actor — mapped to UsecaseActor join table (first linked actor name)
     const [actor, setActor] = useState(usecase?.actor || '');
-    const [description, setDescription] = useState(usecase?.description || '');
 
     // Dropdowns for relational logic
     const [functionRelId, setFunctionRelId] = useState(usecase?.functionRelId || '');
@@ -24,18 +23,17 @@ export default function UsecaseModal({ usecase, businessRules = [], functionalRe
 
     const handleSave = () => {
         onSave({
-            usecaseId: usecase?.usecaseId,   // QUAN TRỌNG
+            usecaseId: usecase?.usecaseId,
             usecaseName,
             precondition,
             postcondition,
             priority,
             exceptions,
             actor,
-            description,
             functionRelId,
             linkedBusinessRuleIds,
             normalFlows: normalFlows.map(f => f.text),
-            alterFlows: alterFlows.map(f => f.text)
+            alterFlows: alterFlows.map(f => f.text),
         });
     };
 
@@ -112,18 +110,9 @@ export default function UsecaseModal({ usecase, businessRules = [], functionalRe
                 {/* Content (Scrollable) */}
                 <div className="flex-1 overflow-y-auto px-8 py-6 space-y-5 srs-scroll bg-[#f8f9fa]">
 
-                    {/* Top Top Box */}
-                    <div className="flex border border-slate-300 bg-white rounded shadow-sm overflow-hidden min-h-[100px]">
+                    {/* Top Box */}
+                    <div className="flex border border-slate-300 bg-white rounded shadow-sm overflow-hidden min-h-[80px]">
                         <div className="w-3/5 p-4 space-y-3 border-r border-slate-300">
-                            <div className="text-sm text-slate-800 flex items-start gap-3">
-                                <span className="font-bold whitespace-nowrap w-[90px] mt-1 text-slate-600">Description:</span>
-                                <textarea
-                                    value={description}
-                                    onChange={e => setDescription(e.target.value)}
-                                    placeholder="As a [role], I want to..."
-                                    className="border border-slate-300 rounded p-2 flex-1 text-sm focus:ring-1 focus:ring-primary focus:border-primary shadow-sm min-h-[60px]"
-                                />
-                            </div>
                             <div className="text-sm text-slate-800 flex items-center gap-3">
                                 <span className="font-bold w-[90px] text-slate-600">Actor:</span>
                                 <input

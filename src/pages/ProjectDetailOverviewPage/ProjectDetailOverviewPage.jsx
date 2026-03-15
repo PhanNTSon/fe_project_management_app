@@ -243,8 +243,11 @@ const ProjectDetailOverviewPage = () => {
                                     ? <EmptyState text="No constraints defined yet." />
                                     : <ul className="space-y-2">
                                         {constraints.map(c => (
-                                            <li key={c.constraintId} className="text-sm text-slate-700 dark:text-slate-300 border-l-4 border-amber-300 pl-3 py-1 bg-slate-50 dark:bg-slate-800 rounded-r">
-                                                {c.description}
+                                            <li key={c.constraintId} className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-300 border-l-4 border-amber-300 pl-3 py-1 bg-slate-50 dark:bg-slate-800 rounded-r">
+                                                {c.type && (
+                                                    <span className="text-[10px] font-bold uppercase px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 shrink-0 mt-0.5">{c.type}</span>
+                                                )}
+                                                <span>{c.description}</span>
                                             </li>
                                         ))}
                                     </ul>
@@ -277,18 +280,77 @@ const ProjectDetailOverviewPage = () => {
                                     : <div className="space-y-3">
                                         {usecases.map(uc => (
                                             <div key={uc.usecaseId} className="p-4 border border-slate-200 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-slate-800">
+                                                {/* Header row */}
                                                 <div className="flex items-center justify-between mb-2">
                                                     <span className="font-semibold text-slate-800 dark:text-slate-100">{uc.usecaseName}</span>
-                                                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                                                        uc.priority === 'HIGH' ? 'bg-red-100 text-red-700' :
-                                                        uc.priority === 'MEDIUM' ? 'bg-amber-100 text-amber-700' :
-                                                        'bg-slate-100 text-slate-500'}`}>
-                                                        {uc.priority ?? 'NORMAL'}
-                                                    </span>
+                                                    <div className="flex items-center gap-2">
+                                                        {uc.actor && (
+                                                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-300 font-semibold">
+                                                                {uc.actor}
+                                                            </span>
+                                                        )}
+                                                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                                                            uc.priority === 'HIGH' ? 'bg-red-100 text-red-700' :
+                                                            uc.priority === 'MEDIUM' ? 'bg-amber-100 text-amber-700' :
+                                                            'bg-slate-100 text-slate-500'}`}>
+                                                            {uc.priority ?? 'NORMAL'}
+                                                        </span>
+                                                    </div>
                                                 </div>
+
+                                                {/* Linked FR */}
+                                                {uc.functionRelId && (() => {
+                                                    const fr = functionalReqs.find(f => f.requirementId === uc.functionRelId);
+                                                    return fr ? (
+                                                        <p className="text-xs text-blue-600 dark:text-blue-400 mb-2 flex items-center gap-1">
+                                                            <span className="material-symbols-outlined text-[13px]">link</span>
+                                                            {fr.title}
+                                                        </p>
+                                                    ) : null;
+                                                })()}
+
+                                                {/* Pre / Post / Exceptions */}
                                                 {uc.precondition && <p className="text-xs text-slate-500 mb-1"><span className="font-medium">Pre:</span> {uc.precondition}</p>}
                                                 {uc.postcondition && <p className="text-xs text-slate-500 mb-1"><span className="font-medium">Post:</span> {uc.postcondition}</p>}
-                                                {uc.exceptions && <p className="text-xs text-slate-500"><span className="font-medium">Exceptions:</span> {uc.exceptions}</p>}
+                                                {uc.exceptions && <p className="text-xs text-slate-500 mb-2"><span className="font-medium">Exceptions:</span> {uc.exceptions}</p>}
+
+                                                {/* Normal Flows */}
+                                                {uc.normalFlows && uc.normalFlows.length > 0 && (
+                                                    <div className="mb-2">
+                                                        <p className="text-xs font-semibold text-slate-500 mb-1">Normal Flow</p>
+                                                        <ol className="list-decimal list-inside space-y-0.5">
+                                                            {uc.normalFlows.map((step, i) => (
+                                                                <li key={i} className="text-xs text-slate-600 dark:text-slate-400">{step}</li>
+                                                            ))}
+                                                        </ol>
+                                                    </div>
+                                                )}
+
+                                                {/* Alternative Flows */}
+                                                {uc.alterFlows && uc.alterFlows.length > 0 && (
+                                                    <div className="mb-2">
+                                                        <p className="text-xs font-semibold text-slate-500 mb-1">Alternative Flow</p>
+                                                        <ol className="list-decimal list-inside space-y-0.5">
+                                                            {uc.alterFlows.map((step, i) => (
+                                                                <li key={i} className="text-xs text-slate-600 dark:text-slate-400">{step}</li>
+                                                            ))}
+                                                        </ol>
+                                                    </div>
+                                                )}
+
+                                                {/* Linked Business Rules */}
+                                                {uc.linkedBusinessRuleIds && uc.linkedBusinessRuleIds.length > 0 && (
+                                                    <div className="flex flex-wrap gap-1 mt-1">
+                                                        {uc.linkedBusinessRuleIds.map(brId => {
+                                                            const br = businessRules.find(r => r.ruleId === brId);
+                                                            return br ? (
+                                                                <span key={brId} className="text-[10px] px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300 font-medium">
+                                                                    {br.ruleDescription.length > 40 ? br.ruleDescription.slice(0,40) + '…' : br.ruleDescription}
+                                                                </span>
+                                                            ) : null;
+                                                        })}
+                                                    </div>
+                                                )}
                                             </div>
                                         ))}
                                     </div>
