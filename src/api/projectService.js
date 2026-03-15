@@ -17,6 +17,11 @@ export const deleteProject = async (projectId) => {
     await api.delete(`${BASE}/${projectId}`);
 };
 
+export const updateProject = async (projectId, { projectName, description }) => {
+    const resp = await api.put(`${BASE}/${projectId}`, { projectName, description });
+    return resp.data;
+};
+
 // ─── Sub-resources ────────────────────────────────────────────
 export const getContextDiagramUrl = async (projectId) => {
     const resp = await api.get(`${BASE}/${projectId}/context-diagram`);

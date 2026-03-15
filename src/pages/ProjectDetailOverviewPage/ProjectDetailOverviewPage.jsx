@@ -168,12 +168,14 @@ const ProjectDetailOverviewPage = () => {
                                 {role}
                             </span>
                         )}
-                        <button
-                            onClick={() => navigate(`/projects/${projectId}/settings`)}
-                            className="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 font-semibold text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
-                        >
-                            Settings
-                        </button>
+                        {role === 'OWNER' && (
+                            <button
+                                onClick={() => navigate(`/projects/${projectId}/settings`)}
+                                className="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 font-semibold text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+                            >
+                                Settings
+                            </button>
+                        )}
                         <button
                             onClick={() => navigate(`/projects/${projectId}/changes`)}
                             className="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 font-semibold text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center gap-1.5"
@@ -229,8 +231,9 @@ const ProjectDetailOverviewPage = () => {
                                                 : `${projectStats?.totalMembers || 0} members`
                                         )
                                     },
-                                    { label: 'Settings', icon: 'settings', path: `/projects/${projectId}/settings`, color: 'text-slate-600 bg-slate-100 dark:bg-slate-800' },
+                                    { label: 'Change Requests', icon: 'compare_arrows', path: `/projects/${projectId}/changes`, color: 'text-amber-600 bg-amber-50 dark:bg-amber-900/30', subtitle: 'Review & approve changes' },
                                     { label: 'Export', icon: 'share', path: `/projects/${projectId}/export`, color: 'text-violet-600 bg-violet-50 dark:bg-violet-900/30' },
+                                    ...(role === 'OWNER' ? [{ label: 'Settings', icon: 'settings', path: `/projects/${projectId}/settings`, color: 'text-slate-600 bg-slate-100 dark:bg-slate-800' }] : []),
                                 ].map(item => (
                                     <button
                                         key={item.label}
