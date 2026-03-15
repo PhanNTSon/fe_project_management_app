@@ -19,15 +19,23 @@ export default function UsecaseModal({ usecase, businessRules = [], functionalRe
 
     // Arrays for flows
     // Note: normally flows are separate endpoints/entities but per instructions we keep them inside the usecase payload as strings.
-    const [normalFlows, setNormalFlows] = useState(usecase?.normalFlows || []);
-    const [alterFlows, setAlterFlows] = useState(usecase?.alterFlows || []);
+    const [normalFlows, setNormalFlows] = useState((usecase?.normalFlows || []).map((flow, i) => ({ id: usecase?.usecaseId + '-nf-' + i, text: flow })));
+    const [alterFlows, setAlterFlows] = useState((usecase?.alterFlows || []).map((flow, i) => ({ id: usecase?.usecaseId + '-af-' + i, text: flow })));
 
     const handleSave = () => {
         onSave({
-            ...usecase,
-            usecaseName, precondition, postcondition, priority, exceptions,
-            actor, description, functionRelId, linkedBusinessRuleIds,
-            normalFlows, alterFlows
+            usecaseId: usecase?.usecaseId,   // QUAN TRỌNG
+            usecaseName,
+            precondition,
+            postcondition,
+            priority,
+            exceptions,
+            actor,
+            description,
+            functionRelId,
+            linkedBusinessRuleIds,
+            normalFlows: normalFlows.map(f => f.text),
+            alterFlows: alterFlows.map(f => f.text)
         });
     };
 
@@ -43,41 +51,41 @@ export default function UsecaseModal({ usecase, businessRules = [], functionalRe
         setLinkedBusinessRuleIds(linkedBusinessRuleIds.filter(id => String(id) !== String(idToRemove)));
     };
 
-    const DynamicFlowList = ({ title, flows, setFlows }) => {
-        const remove = (idx) => setFlows(flows.filter((_, i) => i !== idx));
-        const add = () => setFlows([...flows, '']);
-        const update = (idx, val) => setFlows(flows.map((f, i) => i === idx ? val : f));
+    // const DynamicFlowList = ({ title, flows, setFlows }) => {
+    //     const remove = (idx) => setFlows(flows.filter((_, i) => i !== idx));
+    //     const add = () => setFlows([...flows, '']);
+    //     const update = (idx, val) => setFlows(flows.map((f, i) => i === idx ? val : f));
 
-        return (
-            <div className="border border-slate-300 rounded overflow-hidden mt-3">
-                <div className="bg-slate-100 border-b border-slate-300 px-3 py-2 font-bold text-xs text-slate-800 uppercase tracking-wide">
-                    {title}
-                </div>
-                <div className="p-3 bg-white space-y-2">
-                    {flows.map((flowText, idx) => (
-                        <div key={idx} className="flex gap-2 relative">
-                            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500 select-none">
-                                {idx + 1}:
-                            </div>
-                            <input
-                                className="flex-1 w-full text-xs box-border border border-slate-300 rounded focus:ring-1 focus:ring-primary focus:border-primary py-1.5 pr-2 shadow-sm"
-                                style={{ paddingLeft: '2.2rem' }}
-                                value={flowText}
-                                placeholder="Describe step..."
-                                onChange={e => update(idx, e.target.value)}
-                            />
-                            <button onClick={() => remove(idx)} className="w-7 h-7 rounded bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-200 hover:bg-rose-100 hover:text-rose-700 text-[10px] font-black shrink-0 transition-colors">
-                                <span className="material-symbols-outlined text-[14px]">close</span>
-                            </button>
-                        </div>
-                    ))}
-                    <button onClick={add} className="w-full py-1.5 rounded bg-emerald-50 text-emerald-700 flex items-center justify-center border border-dashed border-emerald-300 hover:bg-emerald-100 hover:text-emerald-800 mt-2 text-xs font-bold transition-colors">
-                        <span className="material-symbols-outlined text-[16px] mr-1">add</span> Add Step
-                    </button>
-                </div>
-            </div>
-        );
-    };
+    //     return (
+    //         <div className="border border-slate-300 rounded overflow-hidden mt-3">
+    //             <div className="bg-slate-100 border-b border-slate-300 px-3 py-2 font-bold text-xs text-slate-800 uppercase tracking-wide">
+    //                 {title}
+    //             </div>
+    //             <div className="p-3 bg-white space-y-2">
+    //                 {flows.map((flowText, idx) => (
+    //                     <div key={idx} className="flex gap-2 relative">
+    //                         <div className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500 select-none">
+    //                             {idx + 1}:
+    //                         </div>
+    //                         <input
+    //                             className="flex-1 w-full text-xs box-border border border-slate-300 rounded focus:ring-1 focus:ring-primary focus:border-primary py-1.5 pr-2 shadow-sm"
+    //                             style={{ paddingLeft: '2.2rem' }}
+    //                             value={flowText}
+    //                             placeholder="Describe step..."
+    //                             onChange={e => update(idx, e.target.value)}
+    //                         />
+    //                         <button onClick={() => remove(idx)} className="w-7 h-7 rounded bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-200 hover:bg-rose-100 hover:text-rose-700 text-[10px] font-black shrink-0 transition-colors">
+    //                             <span className="material-symbols-outlined text-[14px]">close</span>
+    //                         </button>
+    //                     </div>
+    //                 ))}
+    //                 <button onClick={add} className="w-full py-1.5 rounded bg-emerald-50 text-emerald-700 flex items-center justify-center border border-dashed border-emerald-300 hover:bg-emerald-100 hover:text-emerald-800 mt-2 text-xs font-bold transition-colors">
+    //                     <span className="material-symbols-outlined text-[16px] mr-1">add</span> Add Step
+    //                 </button>
+    //             </div>
+    //         </div>
+    //     );
+    // };
 
     return (
         <div className="fixed inset-0 bg-slate-900/50 grid place-items-center z-[150] px-4" style={{ paddingBottom: '2vh', paddingTop: '2vh' }}>
@@ -271,6 +279,71 @@ export default function UsecaseModal({ usecase, businessRules = [], functionalRe
                         Save Use Case
                     </button>
                 </div>
+
+            </div>
+        </div>
+    );
+}
+
+function DynamicFlowList({ title, flows, setFlows }) {
+
+    const remove = (flowId) => {
+        setFlows(prev => prev.filter(f => f.id !== flowId));
+    };
+
+    const add = () => {
+        setFlows(prev => [
+            ...prev,
+            { id: Date.now() + '-' + Math.random(), text: '' }
+        ]);
+    };
+
+    const update = (flowId, val) => {
+        setFlows(prev =>
+            prev.map(f =>
+                f.id === flowId ? { ...f, text: val } : f
+            )
+        );
+    };
+
+    return (
+        <div className="border border-slate-300 rounded overflow-hidden mt-3">
+            <div className="bg-slate-100 border-b border-slate-300 px-3 py-2 font-bold text-xs text-slate-800 uppercase tracking-wide">
+                {title}
+            </div>
+
+            <div className="p-3 bg-white space-y-2">
+                {flows.map((flow, idx) => (
+                    <div key={flow.id} className="flex gap-2 relative">
+
+                        <div className="absolute left-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500 select-none">
+                            {idx + 1}:
+                        </div>
+
+                        <input
+                            className="flex-1 w-full text-xs box-border border border-slate-300 rounded py-1.5 pr-2 shadow-sm"
+                            style={{ paddingLeft: '2.2rem' }}
+                            value={flow.text}
+                            placeholder="Describe step..."
+                            onChange={(e) => update(flow.id, e.target.value)}
+                        />
+
+                        <button
+                            onClick={() => remove(flow.id)}
+                            className="w-7 h-7 rounded bg-rose-50 text-rose-600 flex items-center justify-center border border-rose-200"
+                        >
+                            <span className="material-symbols-outlined text-[14px]">close</span>
+                        </button>
+
+                    </div>
+                ))}
+
+                <button
+                    onClick={add}
+                    className="w-full py-1.5 rounded bg-emerald-50 text-emerald-700 border border-dashed border-emerald-300 text-xs font-bold"
+                >
+                    Add Step
+                </button>
 
             </div>
         </div>

@@ -36,7 +36,7 @@ function UsecaseWarningBadge({ usecase, functionalReqs, businessRules }) {
         showWarning = true;
         reasons.push("Linked Functional Requirement is missing or changed");
     }
-    
+
     // Check if linked BRs exist
     if (usecase.linkedBusinessRuleIds && usecase.linkedBusinessRuleIds.length > 0) {
         const missingBrs = usecase.linkedBusinessRuleIds.filter(id => !businessRules.find(br => String(br.ruleId) === String(id)));
@@ -47,9 +47,9 @@ function UsecaseWarningBadge({ usecase, functionalReqs, businessRules }) {
     }
 
     if (!showWarning) return null;
-    
+
     return (
-        <span 
+        <span
             className="ml-2 inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded cursor-help"
             title={reasons.join("\n")}
         >
@@ -103,7 +103,7 @@ export default function SrsDocumentEditorPage() {
             try {
                 setLoadingInit(true);
                 const roleDto = await getUserRole(projectId);
-                
+
                 if (!CAN_EDIT_ROLES.includes(roleDto.roleName)) {
                     navigate(`/projects/${projectId}`);
                     return;
@@ -166,11 +166,11 @@ export default function SrsDocumentEditorPage() {
 
     const hasChanges = useMemo(() => {
         return JSON.stringify(origVision) !== JSON.stringify(editedVision) ||
-               JSON.stringify(origConstraints) !== JSON.stringify(editedConstraints) ||
-               JSON.stringify(origBusiness) !== JSON.stringify(editedBusiness) ||
-               JSON.stringify(origFunctional) !== JSON.stringify(editedFunctional) ||
-               JSON.stringify(origNonFunctional) !== JSON.stringify(editedNonFunctional) ||
-               JSON.stringify(origUsecases) !== JSON.stringify(editedUsecases);
+            JSON.stringify(origConstraints) !== JSON.stringify(editedConstraints) ||
+            JSON.stringify(origBusiness) !== JSON.stringify(editedBusiness) ||
+            JSON.stringify(origFunctional) !== JSON.stringify(editedFunctional) ||
+            JSON.stringify(origNonFunctional) !== JSON.stringify(editedNonFunctional) ||
+            JSON.stringify(origUsecases) !== JSON.stringify(editedUsecases);
     }, [origVision, editedVision, origConstraints, editedConstraints, origBusiness, editedBusiness, origFunctional, editedFunctional, origNonFunctional, editedNonFunctional, origUsecases, editedUsecases]);
 
 
@@ -194,13 +194,68 @@ export default function SrsDocumentEditorPage() {
         setShowConfirmModal(false);
         setSaving(true);
         try {
+            // Build change items for all modified entities
+            const items = [];
+
+            // Track usecases changes
+            editedUsecases.forEach((uc) => {
+                const origUc = origUsecases.find(u => u.usecaseId === uc.usecaseId);
+
+                // Only include if it's an existing usecase (has real ID) AND has actual changes
+                if (origUc && JSON.stringify(origUc) !== JSON.stringify(uc)) {
+                    items.push({
+                        entityType: "USECASE",
+                        entityId: uc.usecaseId,
+                        operation: "UPDATE",
+                        fieldName: "all",
+                        oldValue: JSON.stringify(origUc),
+                        newValue: JSON.stringify(uc)
+                    });
+                } else if (!origUc && String(uc.usecaseId).startsWith('temp-')) {
+                    // New usecase - strip temp ID before sending
+                    const newUsecaseData = { ...uc };
+                    delete newUsecaseData.usecaseId;
+                    items.push({
+                        entityType: "USECASE",
+                        entityId: null,
+                        operation: "CREATE",
+                        fieldName: "all",
+                        oldValue: "{}",
+                        newValue: JSON.stringify(newUsecaseData)
+                    });
+                }
+            });
+
+            // Check for deleted usecases
+            origUsecases.forEach((origUc) => {
+                if (!editedUsecases.find(u => u.usecaseId === origUc.usecaseId)) {
+                    items.push({
+                        entityType: "USECASE",
+                        entityId: origUc.usecaseId,
+                        operation: "DELETE",
+                        fieldName: "all",
+                        oldValue: JSON.stringify(origUc),
+                        newValue: "{}"
+                    });
+                }
+            });
+
+            // If no changes, skip
+            if (items.length === 0) {
+                alert("No changes to save");
+                setSaving(false);
+                return;
+            }
+
             const payload = {
                 title: "SRS Updates",
                 description: "Updates from SRS Editor",
-                items: [
-                   { entityType: "USECASE", operation: "UPDATE", fieldName: "all", newValue: "{}" }
-                ]
+                items: items
             };
+
+            console.log("🔷 ChangeRequest Items:", items);
+            console.log("🔷 Full Payload:", payload);
+
             await createChangeRequest(projectId, payload);
             alert(AUTO_APPROVE_ROLES.includes(role) ? "Records saved successfully!" : "Change Request submitted successfully!");
             navigate(`/projects/${projectId}`);
@@ -218,10 +273,10 @@ export default function SrsDocumentEditorPage() {
     const handleUpdateBusinessRule = (id, newValue) => {
         // Auto prefix logic
         let processedValue = newValue;
-        setter(editedBusiness.map((item, index) => {
+        setEditedBusiness(editedBusiness.map((item, index) => {
             if (item.ruleId === id) {
                 // If it doesn't already start with BRXXX, format it.
-                // We'll just let the UI prefix it sequentially during render for simplicity, 
+                // We'll just let the UI prefix it sequentially during render for simplicity,
                 // but the user wants it inside the text box.
                 const prefix = `BR${String(index + 1).padStart(3, '0')} - `;
                 if (!newValue.startsWith(prefix) && !newValue.startsWith("BR")) {
@@ -232,7 +287,7 @@ export default function SrsDocumentEditorPage() {
             return item;
         }));
     };
-    
+
     // Better auto-prefixing logic: update on blur or let state handle it cleanly
     const formatBR = (value, index) => {
         const prefix = `BR${String(index + 1).padStart(3, '0')} - `;
@@ -250,11 +305,24 @@ export default function SrsDocumentEditorPage() {
     };
 
     const saveUsecaseFromModal = (newUc) => {
-        if (newUc.usecaseId && !String(newUc.usecaseId).startsWith('temp-')) {
-            setEditedUsecases(editedUsecases.map(u => u.usecaseId === newUc.usecaseId ? newUc : u));
+
+        if (selectedUsecase) {
+            // EDIT
+            setEditedUsecases(
+                editedUsecases.map(u =>
+                    u.usecaseId === selectedUsecase.usecaseId
+                        ? { ...newUc, usecaseId: selectedUsecase.usecaseId }
+                        : u
+                )
+            );
         } else {
-            setEditedUsecases([...editedUsecases, { ...newUc, usecaseId: newUc.usecaseId || 'temp-' + Date.now() }]);
+            // CREATE
+            setEditedUsecases([
+                ...editedUsecases,
+                { ...newUc, usecaseId: 'temp-' + Date.now() }
+            ]);
         }
+
         setShowUsecaseModal(false);
     };
 
@@ -278,17 +346,16 @@ export default function SrsDocumentEditorPage() {
                         <button
                             disabled={!hasChanges || saving}
                             onClick={handleSaveInitiate}
-                            className={`px-4 py-2 text-sm font-bold text-white rounded-md shadow-sm transition-colors ${
-                                hasChanges && !saving ? 'bg-primary hover:bg-primary/90' : 'bg-slate-300 cursor-not-allowed'
-                            }`}
+                            className={`px-4 py-2 text-sm font-bold text-white rounded-md shadow-sm transition-colors ${hasChanges && !saving ? 'bg-primary hover:bg-primary/90' : 'bg-slate-300 cursor-not-allowed'
+                                }`}
                         >
                             {saving ? 'Processing...' : (AUTO_APPROVE_ROLES.includes(role) ? 'Save Changes' : 'Create Change Request')}
                         </button>
                     </div>
                 </div>
-                
+
                 <div className="flex-1 overflow-y-auto p-6 space-y-6 srs-scroll">
-                    
+
                     {/* 1. Detail Information */}
                     <div className="bg-white rounded border border-slate-200 shadow-sm overflow-hidden">
                         <div className="px-5 py-3 bg-slate-100/50 border-b border-slate-100">
@@ -310,7 +377,7 @@ export default function SrsDocumentEditorPage() {
                                             </button>
                                         </div>
                                     ))}
-                                    <button onClick={() => addListItem(setEditedVision, editedVision, { visionScopeId: 'temp-'+Date.now(), content: '' })} className="text-primary text-xs font-semibold flex items-center gap-1 hover:underline mt-1">
+                                    <button onClick={() => addListItem(setEditedVision, editedVision, { visionScopeId: 'temp-' + Date.now(), content: '' })} className="text-primary text-xs font-semibold flex items-center gap-1 hover:underline mt-1">
                                         <span className="material-symbols-outlined text-[16px]">add</span> Add Vision/Scope
                                     </button>
                                 </div>
@@ -331,7 +398,7 @@ export default function SrsDocumentEditorPage() {
                                             </button>
                                         </div>
                                     ))}
-                                    <button onClick={() => addListItem(setEditedConstraints, editedConstraints, { constraintId: 'temp-'+Date.now(), description: '' })} className="text-primary text-xs font-semibold flex items-center gap-1 hover:underline mt-1">
+                                    <button onClick={() => addListItem(setEditedConstraints, editedConstraints, { constraintId: 'temp-' + Date.now(), description: '' })} className="text-primary text-xs font-semibold flex items-center gap-1 hover:underline mt-1">
                                         <span className="material-symbols-outlined text-[16px]">add</span> Add Constraint
                                     </button>
                                 </div>
@@ -356,7 +423,7 @@ export default function SrsDocumentEditorPage() {
                                             </button>
                                         </div>
                                     ))}
-                                    <button onClick={() => addListItem(setEditedBusiness, editedBusiness, { ruleId: 'temp-'+Date.now(), ruleDescription: '' })} className="text-primary text-xs font-semibold flex items-center gap-1 hover:underline mt-1">
+                                    <button onClick={() => addListItem(setEditedBusiness, editedBusiness, { ruleId: 'temp-' + Date.now(), ruleDescription: '' })} className="text-primary text-xs font-semibold flex items-center gap-1 hover:underline mt-1">
                                         <span className="material-symbols-outlined text-[16px]">add</span> Add Business Rule
                                     </button>
                                 </div>
@@ -415,7 +482,7 @@ export default function SrsDocumentEditorPage() {
                                     <div key={fr.requirementId} className="flex gap-3 items-start border-l-[3px] border-blue-400 pl-3 bg-slate-50 p-3 rounded-r border-y border-r border-slate-200">
                                         <div className="flex-1 space-y-2">
                                             <div className="flex items-center gap-2">
-                                                <span className="text-xs font-bold text-blue-800 bg-blue-100 px-2 py-1 rounded">FR{String(idx+1).padStart(3,'0')}</span>
+                                                <span className="text-xs font-bold text-blue-800 bg-blue-100 px-2 py-1 rounded">FR{String(idx + 1).padStart(3, '0')}</span>
                                                 <input className="w-full text-sm font-semibold border-slate-300 shadow-sm rounded text-slate-800 focus:ring-1 focus:ring-primary focus:border-primary py-1.5" value={fr.title} placeholder="Requirement Title" onChange={e => updateListItem(setEditedFunctional, editedFunctional, 'requirementId', fr.requirementId, 'title', e.target.value)} />
                                             </div>
                                             <textarea className="w-full text-xs border-slate-300 shadow-sm rounded text-slate-600 focus:ring-1 focus:ring-primary focus:border-primary min-h-[60px]" value={fr.description} placeholder="Detail Description..." onChange={e => updateListItem(setEditedFunctional, editedFunctional, 'requirementId', fr.requirementId, 'description', e.target.value)} />
@@ -426,7 +493,7 @@ export default function SrsDocumentEditorPage() {
                                     </div>
                                 ))}
                             </div>
-                            <button onClick={() => addListItem(setEditedFunctional, editedFunctional, { requirementId: 'temp-'+Date.now(), title: '', description: '' })} className="text-primary text-xs font-semibold flex items-center gap-1 hover:underline mt-1">
+                            <button onClick={() => addListItem(setEditedFunctional, editedFunctional, { requirementId: 'temp-' + Date.now(), title: '', description: '' })} className="text-primary text-xs font-semibold flex items-center gap-1 hover:underline mt-1">
                                 <span className="material-symbols-outlined text-[16px]">add</span> Add Functional Requirement
                             </button>
                         </div>
@@ -443,11 +510,11 @@ export default function SrsDocumentEditorPage() {
                             {editedNonFunctional.map(nfrItem => (
                                 <div key={nfrItem.category} className="space-y-2">
                                     <label className="block text-xs font-bold text-slate-500 uppercase">{nfrItem.category}</label>
-                                    <textarea 
-                                        className="w-full text-sm border-slate-300 shadow-sm rounded text-slate-700 focus:ring-1 focus:ring-primary focus:border-primary min-h-[60px]" 
-                                        value={nfrItem.description} 
+                                    <textarea
+                                        className="w-full text-sm border-slate-300 shadow-sm rounded text-slate-700 focus:ring-1 focus:ring-primary focus:border-primary min-h-[60px]"
+                                        value={nfrItem.description}
                                         placeholder={`Describe ${nfrItem.category.toLowerCase()} requirements...`}
-                                        onChange={e => updateListItem(setEditedNonFunctional, editedNonFunctional, 'category', nfrItem.category, 'description', e.target.value)} 
+                                        onChange={e => updateListItem(setEditedNonFunctional, editedNonFunctional, 'category', nfrItem.category, 'description', e.target.value)}
                                     />
                                 </div>
                             ))}
@@ -480,7 +547,7 @@ export default function SrsDocumentEditorPage() {
 
                 <div className="p-8 pb-16 min-w-[500px]">
                     <div className="bg-white w-full max-w-[850px] min-h-[1100px] mx-auto shadow-2xl border border-slate-300 rounded p-12 text-slate-800 srs-preview-doc font-serif">
-                        
+
                         <div className="text-center mb-16 border-b-2 border-slate-800 pb-8">
                             <h1 className="text-4xl font-black text-slate-900 mb-3 tracking-tight">Software Requirements Specification</h1>
                             <div className="text-sm text-slate-500 uppercase tracking-widest font-sans font-bold">Auto-generated Draft</div>
@@ -488,42 +555,42 @@ export default function SrsDocumentEditorPage() {
 
                         <section className="mb-10">
                             <h2 className="text-2xl font-bold text-slate-900 mb-5 border-b border-slate-200 pb-2">1. Detail Information</h2>
-                            
+
                             <h3 className="text-base font-bold text-slate-800 mt-5 mb-3">1.1 Vision &amp; Scope</h3>
-                            {editedVision.length === 0 ? <p className="text-sm italic text-slate-400 font-sans">Not specified</p> : 
+                            {editedVision.length === 0 ? <p className="text-sm italic text-slate-400 font-sans">Not specified</p> :
                                 <ul className="list-disc pl-6 space-y-1.5 marker:text-slate-400">
-                                {editedVision.map(v => <li key={v.visionScopeId} className="text-[15px] leading-relaxed text-slate-700">{v.content || '...'}</li>)}
+                                    {editedVision.map(v => <li key={v.visionScopeId} className="text-[15px] leading-relaxed text-slate-700">{v.content || '...'}</li>)}
                                 </ul>
                             }
 
                             <h3 className="text-base font-bold text-slate-800 mt-8 mb-3">1.2 Constraints</h3>
-                            {editedConstraints.length === 0 ? <p className="text-sm italic text-slate-400 font-sans">Not specified</p> : 
+                            {editedConstraints.length === 0 ? <p className="text-sm italic text-slate-400 font-sans">Not specified</p> :
                                 <ul className="list-disc pl-6 space-y-1.5 marker:text-slate-400">
-                                {editedConstraints.map(c => <li key={c.constraintId} className="text-[15px] leading-relaxed text-slate-700">{c.description || '...'}</li>)}
+                                    {editedConstraints.map(c => <li key={c.constraintId} className="text-[15px] leading-relaxed text-slate-700">{c.description || '...'}</li>)}
                                 </ul>
                             }
 
                             <h3 className="text-base font-bold text-slate-800 mt-8 mb-3">1.3 Business Rules</h3>
-                            {editedBusiness.length === 0 ? <p className="text-sm italic text-slate-400 font-sans">Not specified</p> : 
+                            {editedBusiness.length === 0 ? <p className="text-sm italic text-slate-400 font-sans">Not specified</p> :
                                 <div className="space-y-2 font-sans text-sm">
-                                {editedBusiness.map(b => (
-                                    <div key={b.ruleId} className="flex gap-2">
-                                        <span className="font-bold text-slate-800 shrink-0">{b.ruleDescription.split(' - ')[0]} -</span>
-                                        <span className="text-slate-700">{b.ruleDescription.substring(b.ruleDescription.indexOf(' - ') + 3) || '...'}</span>
-                                    </div>
-                                ))}
+                                    {editedBusiness.map(b => (
+                                        <div key={b.ruleId} className="flex gap-2">
+                                            <span className="font-bold text-slate-800 shrink-0">{b.ruleDescription.split(' - ')[0]} -</span>
+                                            <span className="text-slate-700">{b.ruleDescription.substring(b.ruleDescription.indexOf(' - ') + 3) || '...'}</span>
+                                        </div>
+                                    ))}
                                 </div>
                             }
                         </section>
 
                         <section className="mb-10">
                             <h2 className="text-2xl font-bold text-slate-900 mb-5 border-b border-slate-200 pb-2">2. Usecases</h2>
-                            {editedUsecases.length === 0 ? <p className="text-sm italic text-slate-400 font-sans">No usecases defined</p> : 
+                            {editedUsecases.length === 0 ? <p className="text-sm italic text-slate-400 font-sans">No usecases defined</p> :
                                 <div className="space-y-6">
                                     {editedUsecases.map((uc, i) => (
                                         <div key={uc.usecaseId} className="border border-slate-300 rounded font-sans overflow-hidden page-break-inside-avoid">
                                             <div className="bg-slate-100 border-b border-slate-300 px-4 py-2 flex items-center gap-2">
-                                                <span className="font-black text-slate-800">UC-{String(i+1).padStart(2,'0')}</span>
+                                                <span className="font-black text-slate-800">UC-{String(i + 1).padStart(2, '0')}</span>
                                                 <span className="font-bold text-slate-700">{uc.usecaseName || 'Unnamed Usecase'}</span>
                                             </div>
                                             <div className="p-4 grid grid-cols-1 gap-y-3 text-sm">
@@ -545,7 +612,7 @@ export default function SrsDocumentEditorPage() {
                                                     <span className="font-bold text-slate-700">Postcondition</span>
                                                     <span className="text-slate-600">{uc.postcondition || '-'}</span>
                                                 </div>
-                                                
+
                                                 {/* Normal Flow */}
                                                 <div>
                                                     <span className="font-bold text-slate-700 block mb-1">Normal Flow</span>
@@ -553,7 +620,7 @@ export default function SrsDocumentEditorPage() {
                                                         {(uc.normalFlows || []).map((flow, fi) => <li key={fi}>{flow}</li>)}
                                                     </ol>
                                                 </div>
-                                                
+
                                                 {/* Alter Flow */}
                                                 <div>
                                                     <span className="font-bold text-slate-700 block mb-1">Alter Flow</span>
@@ -561,7 +628,7 @@ export default function SrsDocumentEditorPage() {
                                                         {(uc.alterFlows || []).map((flow, fi) => <li key={fi}>{flow}</li>)}
                                                     </ol>
                                                 </div>
-                                                
+
                                                 <div className="grid grid-cols-[120px_1fr]">
                                                     <span className="font-bold text-slate-700">Priority</span>
                                                     <span className="text-slate-600">{uc.priority || 'MEDIUM'}</span>
@@ -575,11 +642,11 @@ export default function SrsDocumentEditorPage() {
 
                         <section>
                             <h2 className="text-2xl font-bold text-slate-900 mb-5 border-b border-slate-200 pb-2">3. Functional Requirements</h2>
-                            {editedFunctional.length === 0 ? <p className="text-sm italic text-slate-400 font-sans">No functional requirements defined</p> : 
+                            {editedFunctional.length === 0 ? <p className="text-sm italic text-slate-400 font-sans">No functional requirements defined</p> :
                                 <div className="space-y-5 font-sans">
                                     {editedFunctional.map((fr, idx) => (
                                         <div key={fr.requirementId}>
-                                            <h4 className="font-bold text-[15px] text-slate-800 mb-1">FR{String(idx+1).padStart(3,'0')}: {fr.title || 'Untitled Requirement'}</h4>
+                                            <h4 className="font-bold text-[15px] text-slate-800 mb-1">FR{String(idx + 1).padStart(3, '0')}: {fr.title || 'Untitled Requirement'}</h4>
                                             <p className="text-[14px] text-slate-600 pl-8 leading-relaxed">{fr.description || 'No description provided'}</p>
                                         </div>
                                     ))}
@@ -621,8 +688,8 @@ export default function SrsDocumentEditorPage() {
                         </div>
 
                         <label className="flex items-center gap-3 p-4 bg-slate-50 border border-slate-300 rounded-lg cursor-pointer hover:bg-slate-100 transition-colors shadow-sm">
-                            <input 
-                                type="checkbox" 
+                            <input
+                                type="checkbox"
                                 className="w-5 h-5 rounded border-slate-400 text-primary focus:ring-primary"
                                 checked={warningsConfirmed}
                                 onChange={(e) => setWarningsConfirmed(e.target.checked)}
@@ -644,12 +711,12 @@ export default function SrsDocumentEditorPage() {
                 </div>
             )}
 
-            {showUsecaseModal && <UsecaseModal 
-                usecase={selectedUsecase} 
+            {showUsecaseModal && <UsecaseModal
+                usecase={selectedUsecase}
                 businessRules={editedBusiness}
                 functionalRequirements={editedFunctional}
-                onClose={() => setShowUsecaseModal(false)} 
-                onSave={saveUsecaseFromModal} 
+                onClose={() => setShowUsecaseModal(false)}
+                onSave={saveUsecaseFromModal}
             />}
         </div>
     );
