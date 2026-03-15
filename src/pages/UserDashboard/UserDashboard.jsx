@@ -106,6 +106,13 @@ const UserDashboard = () => {
             <span className="material-symbols-outlined text-[18px]">filter_list</span>
             Filter
           </button>
+          <button
+            onClick={() => navigate('/pricing')}
+            className="flex items-center gap-2 px-4 py-2 bg-amber-500 text-white rounded-lg text-sm font-semibold shadow-lg shadow-amber-500/25 hover:bg-amber-600 transition-all"
+          >
+            <span className="material-symbols-outlined text-[18px]">workspace_premium</span>
+            Đăng ký VIP
+          </button>
           <button onClick={() => navigate('/projects/new')} className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg text-sm font-semibold shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all">
             <span className="material-symbols-outlined text-[18px]">add</span>
             Create Project

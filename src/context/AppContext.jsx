@@ -1,5 +1,5 @@
-import { createContext, useState, useEffect } from "react";
-import { refreshToken, getProfile } from "../api/authService";
+import { createContext, useState, useEffect, useCallback } from "react";
+import { refreshToken, getProfile, logout } from "../api/authService";
 import { setAuthToken } from "../api/axiosClient";
 
 export const AppContext = createContext();
@@ -71,12 +71,34 @@ export const AppProvider = ({ children }) => {
 
         bootstrapAuth();
 
-        // ✅ Cleanup: Mark component as unmounted (React Strict Mode)
         return () => {
             isMounted = false;
             console.log("[AppContext] Component cleanup (Strict Mode unmount)");
         };
 
+    }, []);
+
+    // ✅ Centralized logout: gọi API + xóa token + xóa cookies + reset state
+    const logoutUser = useCallback(async () => {
+        try {
+            await logout();
+        } catch (err) {
+            console.error('[AppContext] Logout API error (safe to ignore):', err);
+        } finally {
+            // Xóa Bearer token khỏi axios headers
+            setAuthToken(null);
+            // Xóa tất cả cookies mà frontend có thể đã set (non-httpOnly)
+            document.cookie.split(';').forEach((c) => {
+                const eqPos = c.indexOf('=');
+                const name = eqPos > -1 ? c.substring(0, eqPos).trim() : c.trim();
+                // Xóa cookie bằng cách đặt maxAge=0
+                document.cookie = `${name}=;path=/;max-age=0`;
+                // Đảm bảo cũng xóa trên subdomain nếu có
+                document.cookie = `${name}=;path=/;domain=${window.location.hostname};max-age=0`;
+            });
+            setJwt(null);
+            setUser(null);
+        }
     }, []);
 
     return (
@@ -86,7 +108,8 @@ export const AppProvider = ({ children }) => {
                 setJwt,
                 user,
                 setUser,
-                authLoading
+                authLoading,
+                logoutUser
             }}
         >
             {children}

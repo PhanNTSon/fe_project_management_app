@@ -79,6 +79,7 @@ function App() {
           <Route path="/projects/:projectId/invite" element={<ProtectedRoute><InviteMembersPage /></ProtectedRoute>} />
           <Route path="/projects/:projectId/compare" element={<ProtectedRoute><CompareVersionsPage /></ProtectedRoute>} />
           <Route path="/projects/:projectId/history" element={<ProtectedRoute><ChangeHistoryPage /></ProtectedRoute>} />
+          <Route path="/projects/:projectId/changes" element={<ProtectedRoute><ChangeHistoryPage /></ProtectedRoute>} />
           <Route path="/projects/:projectId/activity" element={<ProtectedRoute><ActivityLogPage /></ProtectedRoute>} />
 
           {/* Protected User & Settings Routes */}

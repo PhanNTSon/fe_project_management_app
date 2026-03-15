@@ -62,3 +62,8 @@ export const getUserRole = async (projectId) => {
     const resp = await api.get(`${BASE}/${projectId}/my-role`);
     return resp.data; // ResponseRoleDto  { roleName: "OWNER" | "MAINTAINER" | "EDITOR" | "VIEWER" }
 };
+
+export const restoreVersion = async (projectId, version) => {
+    const resp = await api.post(`${BASE}/${projectId}/restore-version`, { version });
+    return resp.data;
+};

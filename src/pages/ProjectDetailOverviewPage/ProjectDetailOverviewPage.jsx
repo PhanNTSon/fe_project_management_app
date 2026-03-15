@@ -165,6 +165,13 @@ const ProjectDetailOverviewPage = () => {
                         >
                             Settings
                         </button>
+                        <button
+                            onClick={() => navigate(`/projects/${projectId}/changes`)}
+                            className="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 font-semibold text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center gap-1.5"
+                        >
+                            <span className="material-symbols-outlined text-[16px]">history</span>
+                            Change History
+                        </button>
                         {renderSrsEditorButton()}
                         <button
                             onClick={() => navigate(`/projects/${projectId}/export`)}
@@ -406,6 +413,7 @@ const ProjectDetailOverviewPage = () => {
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 {[
                                     { label: 'Members', icon: 'group', path: `/projects/${projectId}/members`, color: 'text-rose-600 bg-rose-50 dark:bg-rose-900/30' },
+                                    { label: 'Change History', icon: 'history', path: `/projects/${projectId}/changes`, color: 'text-amber-600 bg-amber-50 dark:bg-amber-900/30' },
                                     { label: 'Settings', icon: 'settings', path: `/projects/${projectId}/settings`, color: 'text-slate-600 bg-slate-100 dark:bg-slate-800' },
                                     { label: 'Export', icon: 'share', path: `/projects/${projectId}/export`, color: 'text-violet-600 bg-violet-50 dark:bg-violet-900/30' },
                                 ].map(item => (

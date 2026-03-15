@@ -1,5 +1,5 @@
 import './LoginPage.css';
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { login, getProfile } from "../../api/authService";
 import { setAuthToken } from "../../api/axiosClient";
@@ -9,11 +9,17 @@ import { parseApiError, logApiError } from "../../api/apiErrorUtils";
 const LoginPage = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   const navigate = useNavigate();
-  const { setJwt, setUser } = useContext(AppContext);
+  const { setJwt, setUser, jwt } = useContext(AppContext);
+
+  // Redirect to dashboard if already logged in
+  useEffect(() => {
+    if (jwt) navigate('/dashboard', { replace: true });
+  }, [jwt, navigate]);
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -118,15 +124,22 @@ const LoginPage = () => {
               <label className="block text-sm font-semibold mb-2 text-slate-700 dark:text-slate-300">Password</label>
               <div className="relative">
                 <input 
-                  className="w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all placeholder:text-slate-400" 
+                  className="w-full px-4 py-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 focus:ring-2 focus:ring-primary focus:border-transparent outline-none transition-all placeholder:text-slate-400 pr-12" 
                   placeholder="••••••••" 
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
-                <button className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600" type="button">
-                  <span className="material-symbols-outlined text-xl">visibility</span>
+                <button 
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors" 
+                  type="button"
+                  onClick={() => setShowPassword(v => !v)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  <span className="material-symbols-outlined text-xl">
+                    {showPassword ? 'visibility_off' : 'visibility'}
+                  </span>
                 </button>
               </div>
             </div>
