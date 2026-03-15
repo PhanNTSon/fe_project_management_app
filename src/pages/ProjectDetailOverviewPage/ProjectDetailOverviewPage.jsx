@@ -68,7 +68,7 @@ const ProjectDetailOverviewPage = () => {
     const [loadingFunctional, setLoadingFunctional] = useState(true);
     const [loadingNonFunctional, setLoadingNonFunctional] = useState(true);
     const [loadingContext, setLoadingContext] = useState(true);
-    
+
     const [contextDiagramUrl, setContextDiagramUrl] = useState('');
     const [projectStats, setProjectStats] = useState(null);
     const [loadingStats, setLoadingStats] = useState(true);
@@ -174,6 +174,13 @@ const ProjectDetailOverviewPage = () => {
                         >
                             Settings
                         </button>
+                        <button
+                            onClick={() => navigate(`/projects/${projectId}/changes`)}
+                            className="px-4 py-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 font-semibold text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors flex items-center gap-1.5"
+                        >
+                            <span className="material-symbols-outlined text-[16px]">history</span>
+                            Change History
+                        </button>
                         {renderSrsEditorButton()}
                         <button
                             onClick={() => navigate(`/projects/${projectId}/export`)}
@@ -211,14 +218,14 @@ const ProjectDetailOverviewPage = () => {
                             <h4 className="font-bold text-lg mb-4">Quick Access</h4>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 {[
-                                    { 
-                                        label: 'Members', 
-                                        icon: 'group', 
-                                        path: `/projects/${projectId}/members`, 
+                                    {
+                                        label: 'Members',
+                                        icon: 'group',
+                                        path: `/projects/${projectId}/members`,
                                         color: 'text-rose-600 bg-rose-50 dark:bg-rose-900/30',
                                         subtitle: loadingStats ? 'Loading...' : (
-                                            role === 'OWNER' 
-                                                ? `${projectStats?.totalMembers || 0} active, ${projectStats?.pendingInvites || 0} pending` 
+                                            role === 'OWNER'
+                                                ? `${projectStats?.totalMembers || 0} active, ${projectStats?.pendingInvites || 0} pending`
                                                 : `${projectStats?.totalMembers || 0} members`
                                         )
                                     },
@@ -347,10 +354,9 @@ const ProjectDetailOverviewPage = () => {
                                                                 {uc.actor}
                                                             </span>
                                                         )}
-                                                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                                                            uc.priority === 'HIGH' ? 'bg-red-100 text-red-700' :
-                                                            uc.priority === 'MEDIUM' ? 'bg-amber-100 text-amber-700' :
-                                                            'bg-slate-100 text-slate-500'}`}>
+                                                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${uc.priority === 'HIGH' ? 'bg-red-100 text-red-700' :
+                                                                uc.priority === 'MEDIUM' ? 'bg-amber-100 text-amber-700' :
+                                                                    'bg-slate-100 text-slate-500'}`}>
                                                             {uc.priority ?? 'NORMAL'}
                                                         </span>
                                                     </div>
@@ -403,7 +409,7 @@ const ProjectDetailOverviewPage = () => {
                                                             const br = businessRules.find(r => r.ruleId === brId);
                                                             return br ? (
                                                                 <span key={brId} className="text-[10px] px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300 font-medium">
-                                                                    {br.ruleDescription.length > 40 ? br.ruleDescription.slice(0,40) + '…' : br.ruleDescription}
+                                                                    {br.ruleDescription.length > 40 ? br.ruleDescription.slice(0, 40) + '…' : br.ruleDescription}
                                                                 </span>
                                                             ) : null;
                                                         })}

@@ -71,7 +71,7 @@ export const getUserRole = async (projectId) => {
 // ─── AI Integration ───────────────────────────────────────────
 export const generateAiContextDiagram = async (projectId, payload) => {
     const resp = await api.post(`${BASE}/${projectId}/ai/generate-context`, payload);
-    return resp.data.mermaidCode; 
+    return resp.data.mermaidCode;
 };
 
 export const generateAiUsecaseDiagram = async (projectId, payload) => {
@@ -120,5 +120,10 @@ export const getUserInvitations = async () => {
 
 export const respondToInvitation = async (invitationId, accept) => {
     const resp = await api.post(`/api/users/me/invitations/${invitationId}/respond`, { accept });
+    return resp.data;
+};
+
+export const restoreVersion = async (projectId, version) => {
+    const resp = await api.post(`${BASE}/${projectId}/restore-version`, { version });
     return resp.data;
 };

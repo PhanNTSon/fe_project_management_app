@@ -13,7 +13,11 @@ export const login = async (data) => {
 };
 
 export const logout = async () => {
-    await api.post("/api/auth/logout");
+    // Gửi empty string body với Content-Type text/plain để Spring @RequestBody không bị 400
+    // Backend sẽ xóa cookie refresh_token (maxAge=0) trong response dù body rỗng
+    await api.post("/api/auth/logout", "", {
+        headers: { "Content-Type": "text/plain" }
+    });
     setAuthToken(null); // ✅ xóa Bearer token khỏi axios headers
 }
 
