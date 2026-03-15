@@ -11,6 +11,7 @@ import {
     getUsecases,
     getFunctionalRequirements,
     getNonFunctionalRequirements,
+    getContextDiagramUrl
 } from '../../api/projectService';
 import { parseApiError, logApiError } from '../../api/apiErrorUtils';
 
@@ -65,6 +66,9 @@ const ProjectDetailOverviewPage = () => {
     const [loadingUsecases, setLoadingUsecases] = useState(true);
     const [loadingFunctional, setLoadingFunctional] = useState(true);
     const [loadingNonFunctional, setLoadingNonFunctional] = useState(true);
+    const [loadingContext, setLoadingContext] = useState(true);
+    
+    const [contextDiagramUrl, setContextDiagramUrl] = useState('');
 
     const [error, setError] = useState(null);
 
@@ -102,6 +106,7 @@ const ProjectDetailOverviewPage = () => {
         fetchSection(getUsecases, setUsecases, setLoadingUsecases);
         fetchSection(getFunctionalRequirements, setFunctionalReqs, setLoadingFunctional);
         fetchSection(getNonFunctionalRequirements, setNonFunctionalReqs, setLoadingNonFunctional);
+        fetchSection(getContextDiagramUrl, setContextDiagramUrl, setLoadingContext);
     }, [projectId]);
 
     // ── Derived ──────────────────────────────────────────────────────────────
@@ -255,7 +260,7 @@ const ProjectDetailOverviewPage = () => {
                             </SectionCard>
 
                             {/* 1.3 Business Rules */}
-                            <SectionCard title="1.4 Business Rules">
+                            <SectionCard title="1.3 Business Rules">
                                 {loadingBusiness ? <SectionSpinner /> : businessRules.length === 0
                                     ? <EmptyState text="No business rules defined yet." />
                                     : <ul className="space-y-2">
@@ -265,6 +270,16 @@ const ProjectDetailOverviewPage = () => {
                                             </li>
                                         ))}
                                     </ul>
+                                }
+                            </SectionCard>
+
+                            {/* 1.4 Context Diagram */}
+                            <SectionCard title="1.4 Context Diagram">
+                                {loadingContext ? <SectionSpinner /> : !contextDiagramUrl
+                                    ? <EmptyState text="Chưa có diagram (No context diagram uploaded)." />
+                                    : <div className="flex justify-center bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded p-4">
+                                        <img src={contextDiagramUrl} alt="Context Diagram" className="max-w-full h-auto max-h-[500px] object-contain rounded" />
+                                    </div>
                                 }
                             </SectionCard>
                         </div>
@@ -351,6 +366,18 @@ const ProjectDetailOverviewPage = () => {
                                                         })}
                                                     </div>
                                                 )}
+
+                                                {/* Usecase Diagram */}
+                                                <div className="mt-4 border-t border-slate-100 dark:border-slate-700 pt-3">
+                                                    <p className="text-xs font-semibold text-slate-500 mb-2">Usecase Diagram</p>
+                                                    {uc.diagramUrl ? (
+                                                        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded p-2 flex justify-center">
+                                                            <img src={uc.diagramUrl} alt={`Diagram for ${uc.usecaseName}`} className="max-w-full h-auto max-h-[300px] object-contain rounded" />
+                                                        </div>
+                                                    ) : (
+                                                        <EmptyState text="Chưa có diagram" />
+                                                    )}
+                                                </div>
                                             </div>
                                         ))}
                                     </div>

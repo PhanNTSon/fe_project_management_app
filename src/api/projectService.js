@@ -23,6 +23,11 @@ export const getContextDiagramUrl = async (projectId) => {
     return resp.data; // String URL
 };
 
+export const updateContextDiagramUrl = async (projectId, url) => {
+    const resp = await api.put(`${BASE}/${projectId}/context-diagram`, { url });
+    return resp.data;
+};
+
 export const getVisionScopes = async (projectId) => {
     const resp = await api.get(`${BASE}/${projectId}/vision-scopes`);
     return resp.data; // ResponseVisionScopeDto[]  { visionScopeId, content }
@@ -61,4 +66,15 @@ export const getPermissions = async (projectId) => {
 export const getUserRole = async (projectId) => {
     const resp = await api.get(`${BASE}/${projectId}/my-role`);
     return resp.data; // ResponseRoleDto  { roleName: "OWNER" | "MAINTAINER" | "EDITOR" | "VIEWER" }
+};
+
+// ─── AI Integration ───────────────────────────────────────────
+export const generateAiContextDiagram = async (projectId, payload) => {
+    const resp = await api.post(`${BASE}/${projectId}/ai/generate-context`, payload);
+    return resp.data.mermaidCode; 
+};
+
+export const generateAiUsecaseDiagram = async (projectId, payload) => {
+    const resp = await api.post(`${BASE}/${projectId}/ai/generate-usecase`, payload);
+    return resp.data.mermaidCode;
 };

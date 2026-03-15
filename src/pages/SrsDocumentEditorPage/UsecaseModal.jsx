@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
+import { uploadImageToCloudinary } from '../../utils/cloudinary';
+import { parseApiError } from '../../api/apiErrorUtils';
+import DrawioModal from '../../components/DrawioEmbedded/DrawioModal';
+import { generateAiUsecaseDiagram } from '../../api/projectService';
 
-export default function UsecaseModal({ usecase, businessRules = [], functionalRequirements = [], onClose, onSave }) {
+export default function UsecaseModal({ usecase, businessRules = [], functionalRequirements = [], projectId, onClose, onSave }) {
     // If we have an existing usecase, seed state. Otherwise start empty.
     const isEdit = !!usecase;
     const [usecaseName, setUsecaseName] = useState(usecase?.usecaseName || '');
@@ -11,6 +15,14 @@ export default function UsecaseModal({ usecase, businessRules = [], functionalRe
 
     // Actor — mapped to UsecaseActor join table (first linked actor name)
     const [actor, setActor] = useState(usecase?.actor || '');
+    
+    const [diagramUrl, setDiagramUrl] = useState(usecase?.diagramUrl || '');
+    const [uploadingDiagram, setUploadingDiagram] = useState(false);
+    
+    // -- AI Diagram State --
+    const [aiGeneratingDiagram, setAiGeneratingDiagram] = useState(false);
+    const [aiMermaidSource, setAiMermaidSource] = useState('');
+    const [showDrawioModal, setShowDrawioModal] = useState(false);
 
     // Dropdowns for relational logic
     const [functionRelId, setFunctionRelId] = useState(usecase?.functionRelId || '');
@@ -34,7 +46,44 @@ export default function UsecaseModal({ usecase, businessRules = [], functionalRe
             linkedBusinessRuleIds,
             normalFlows: normalFlows.map(f => f.text),
             alterFlows: alterFlows.map(f => f.text),
+            diagramUrl
         });
+    };
+
+    const handleUploadDiagram = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        setUploadingDiagram(true);
+        try {
+            const url = await uploadImageToCloudinary(file);
+            setDiagramUrl(url);
+        } catch (error) {
+            alert("Diagram upload failed. Check Cloudinary settings.");
+        } finally {
+            setUploadingDiagram(false);
+            e.target.value = null; // Clear input
+        }
+    };
+
+    const handleGenerateAiDiagram = async () => {
+        setAiGeneratingDiagram(true);
+        try {
+            const usecaseData = {
+                usecaseName,
+                actor,
+                precondition,
+                postcondition,
+                normalFlows: normalFlows.map(f => f.text),
+                alterFlows: alterFlows.map(f => f.text)
+            };
+            const mermaidCode = await generateAiUsecaseDiagram(projectId, usecaseData);
+            setAiMermaidSource(mermaidCode);
+            setShowDrawioModal(true);
+        } catch (error) {
+            alert(parseApiError(error, "Failed to generate AI diagram. Ensure you have network connectivity."));
+        } finally {
+            setAiGeneratingDiagram(false);
+        }
     };
 
     const handleAddLinkedBr = (e) => {
@@ -251,6 +300,58 @@ export default function UsecaseModal({ usecase, businessRules = [], functionalRe
                         </div>
                     </div>
 
+                    {/* Diagram Upload Area */}
+                    <div className="border border-slate-300 bg-white rounded shadow-sm overflow-hidden mt-3 p-4">
+                        <label className="block text-sm font-bold text-slate-600 mb-3">Use Case Diagram</label>
+                        <div className="flex items-start gap-4">
+                            {/* Preview Area */}
+                            <div className="w-48 h-32 bg-slate-50 border border-dashed border-slate-300 rounded flex items-center justify-center relative overflow-hidden shrink-0">
+                                {uploadingDiagram ? (
+                                    <span className="text-sm text-slate-500 font-medium flex items-center gap-2">
+                                        <span className="material-symbols-outlined animate-spin">progress_activity</span> Uploading...
+                                    </span>
+                                ) : diagramUrl ? (
+                                    <img src={diagramUrl} alt="Usecase Diagram" className="w-full h-full object-contain" />
+                                ) : (
+                                    <span className="text-xs text-slate-400 font-medium">No diagram uploaded</span>
+                                )}
+                            </div>
+
+                            {/* Actions Area */}
+                            <div className="flex-1 space-y-3">
+                                <div className="flex items-center gap-2">
+                                    <label className="inline-flex items-center gap-2 px-4 py-2 rounded bg-slate-100 border border-slate-300 text-slate-700 font-bold text-sm hover:bg-slate-200 cursor-pointer transition-colors shadow-sm">
+                                        <span className="material-symbols-outlined text-[18px]">cloud_upload</span>
+                                        <span>Upload Image</span>
+                                        <input type="file" accept="image/*" className="hidden" onChange={handleUploadDiagram} disabled={uploadingDiagram || aiGeneratingDiagram} />
+                                    </label>
+                                    
+                                    <button 
+                                        onClick={handleGenerateAiDiagram}
+                                        disabled={uploadingDiagram || aiGeneratingDiagram}
+                                        className="inline-flex items-center gap-2 px-4 py-2 rounded bg-primary text-white shadow-sm hover:bg-primary/90 transition-colors text-sm font-bold disabled:opacity-50"
+                                    >
+                                        {aiGeneratingDiagram ? (
+                                            <span className="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
+                                        ) : (
+                                            <span className="material-symbols-outlined text-[18px]">temp_preferences_custom</span>
+                                        )}
+                                        A.I gen
+                                    </button>
+                                </div>
+                                
+                                {diagramUrl && (
+                                    <div>
+                                        <button onClick={() => setDiagramUrl('')} className="text-xs text-rose-500 font-bold hover:underline">
+                                            Remove Diagram
+                                        </button>
+                                        <p className="text-[10px] text-slate-400 mt-2 truncate max-w-[200px] md:max-w-sm" title={diagramUrl}>URL: {diagramUrl}</p>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
 
                 {/* Footer (Fixed) */}
@@ -268,7 +369,14 @@ export default function UsecaseModal({ usecase, businessRules = [], functionalRe
                         Save Use Case
                     </button>
                 </div>
-
+                
+                {showDrawioModal && (
+                    <DrawioModal
+                        mermaidSource={aiMermaidSource}
+                        onClose={() => setShowDrawioModal(false)}
+                        onUploadSuccess={(url) => setDiagramUrl(url)}
+                    />
+                )}
             </div>
         </div>
     );

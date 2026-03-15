@@ -2,6 +2,7 @@ import './SrsDocumentEditorPage.css';
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
+    getMyProjects,
     getUserRole,
     getVisionScopes,
     getConstraints,
@@ -9,10 +10,15 @@ import {
     getUsecases,
     getFunctionalRequirements,
     getNonFunctionalRequirements,
+    getContextDiagramUrl,
+    updateContextDiagramUrl,
+    generateAiContextDiagram
 } from '../../api/projectService';
 import { createChangeRequest } from '../../api/changeRequestService';
 import { parseApiError } from '../../api/apiErrorUtils';
+import { uploadImageToCloudinary } from '../../utils/cloudinary';
 import UsecaseModal from './UsecaseModal';
+import DrawioModal from '../../components/DrawioEmbedded/DrawioModal';
 
 const CAN_EDIT_ROLES = ['OWNER', 'MAINTAINER', 'EDITOR'];
 const AUTO_APPROVE_ROLES = ['OWNER', 'MAINTAINER'];
@@ -67,6 +73,7 @@ export default function SrsDocumentEditorPage() {
     const [role, setRole] = useState(null);
     const [loadingInit, setLoadingInit] = useState(true);
     const [error, setError] = useState(null);
+    const [project, setProject] = useState(null);
 
     // -- State: Original Data --
     const [origVision, setOrigVision] = useState([]);
@@ -83,6 +90,16 @@ export default function SrsDocumentEditorPage() {
     const [editedFunctional, setEditedFunctional] = useState([]);
     const [editedNonFunctional, setEditedNonFunctional] = useState([]);
     const [editedUsecases, setEditedUsecases] = useState([]);
+
+    // -- State: Context Diagram --
+    const [origContextDiagramUrl, setOrigContextDiagramUrl] = useState('');
+    const [editedContextDiagramUrl, setEditedContextDiagramUrl] = useState('');
+    const [uploadingContextDiagram, setUploadingContextDiagram] = useState(false);
+    
+    // -- State: AI Diagram --
+    const [aiGeneratingDiagram, setAiGeneratingDiagram] = useState(false);
+    const [aiMermaidSource, setAiMermaidSource] = useState('');
+    const [showDrawioModal, setShowDrawioModal] = useState(false);
 
     // -- UI State --
     const [leftWidth, setLeftWidth] = useState(55); // percentage
@@ -102,21 +119,28 @@ export default function SrsDocumentEditorPage() {
             if (!projectId) return;
             try {
                 setLoadingInit(true);
-                const roleDto = await getUserRole(projectId);
+                const [roleDto, projects] = await Promise.all([
+                    getUserRole(projectId),
+                    getMyProjects()
+                ]);
 
                 if (!CAN_EDIT_ROLES.includes(roleDto.roleName)) {
                     navigate(`/projects/${projectId}`);
                     return;
                 }
                 setRole(roleDto.roleName);
+                
+                const found = projects.find(p => String(p.projectId) === String(projectId));
+                setProject(found);
 
-                const [vs, cs, br, fr, nfr, uc] = await Promise.all([
+                const [vs, cs, br, fr, nfr, uc, contextUrl] = await Promise.all([
                     getVisionScopes(projectId).catch(() => []),
                     getConstraints(projectId).catch(() => []),
                     getBusinessRules(projectId).catch(() => []),
                     getFunctionalRequirements(projectId).catch(() => []),
                     getNonFunctionalRequirements(projectId).catch(() => []),
                     getUsecases(projectId).catch(() => []),
+                    getContextDiagramUrl(projectId).catch(() => '')
                 ]);
 
                 const nfrCategories = ['USABILITY', 'PERFORMANCE', 'SECURITY', 'SCALABILITY'];
@@ -127,6 +151,7 @@ export default function SrsDocumentEditorPage() {
 
                 setOrigVision(vs); setOrigConstraints(cs); setOrigBusiness(br);
                 setOrigFunctional(fr); setOrigNonFunctional(completeNfr); setOrigUsecases(uc);
+                setOrigContextDiagramUrl(contextUrl);
 
                 setEditedVision(JSON.parse(JSON.stringify(vs)));
                 setEditedConstraints(JSON.parse(JSON.stringify(cs)));
@@ -134,6 +159,7 @@ export default function SrsDocumentEditorPage() {
                 setEditedFunctional(JSON.parse(JSON.stringify(fr)));
                 setEditedNonFunctional(JSON.parse(JSON.stringify(completeNfr)));
                 setEditedUsecases(JSON.parse(JSON.stringify(uc)));
+                setEditedContextDiagramUrl(contextUrl);
 
             } catch (err) {
                 setError(parseApiError(err, 'Failed to load SRS data.'));
@@ -170,8 +196,9 @@ export default function SrsDocumentEditorPage() {
             JSON.stringify(origBusiness) !== JSON.stringify(editedBusiness) ||
             JSON.stringify(origFunctional) !== JSON.stringify(editedFunctional) ||
             JSON.stringify(origNonFunctional) !== JSON.stringify(editedNonFunctional) ||
-            JSON.stringify(origUsecases) !== JSON.stringify(editedUsecases);
-    }, [origVision, editedVision, origConstraints, editedConstraints, origBusiness, editedBusiness, origFunctional, editedFunctional, origNonFunctional, editedNonFunctional, origUsecases, editedUsecases]);
+            JSON.stringify(origUsecases) !== JSON.stringify(editedUsecases) ||
+            origContextDiagramUrl !== editedContextDiagramUrl;
+    }, [origVision, editedVision, origConstraints, editedConstraints, origBusiness, editedBusiness, origFunctional, editedFunctional, origNonFunctional, editedNonFunctional, origUsecases, editedUsecases, origContextDiagramUrl, editedContextDiagramUrl]);
 
 
     const hasAnyUsecaseWarning = useMemo(() => {
@@ -321,7 +348,14 @@ export default function SrsDocumentEditorPage() {
             console.log("ChangeRequest Items:", items);
             console.log("Full Payload:", payload);
 
-            await createChangeRequest(projectId, payload);
+            if (items.length > 0) {
+                await createChangeRequest(projectId, payload);
+            }
+            
+            if (origContextDiagramUrl !== editedContextDiagramUrl) {
+                await updateContextDiagramUrl(projectId, editedContextDiagramUrl);
+            }
+
             alert(AUTO_APPROVE_ROLES.includes(role) ? "Records saved successfully!" : "Change Request submitted successfully!");
             navigate(`/projects/${projectId}`);
         } catch (err) {
@@ -389,6 +423,41 @@ export default function SrsDocumentEditorPage() {
         }
 
         setShowUsecaseModal(false);
+    };
+
+    const handleUploadContextDiagram = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        setUploadingContextDiagram(true);
+        try {
+            const url = await uploadImageToCloudinary(file);
+            setEditedContextDiagramUrl(url);
+        } catch (error) {
+            alert("Upload failed. Check Cloudinary configuration.");
+        } finally {
+            setUploadingContextDiagram(false);
+            e.target.value = null; // reset input
+        }
+    };
+
+    const handleGenerateAiDiagram = async () => {
+        setAiGeneratingDiagram(true);
+        try {
+            const projectData = {
+                projectName: project?.projectName,
+                description: project?.description,
+                visionScopes: editedVision.map(v => v.content),
+                // basic generic actor extraction from usecases
+                actorList: [...new Set(editedUsecases.map(uc => uc.actor).filter(Boolean))]
+            };
+            const mermaidCode = await generateAiContextDiagram(projectId, projectData);
+            setAiMermaidSource(mermaidCode);
+            setShowDrawioModal(true);
+        } catch (error) {
+            alert(parseApiError(error, "Failed to generate AI diagram. Ensure you have network connectivity."));
+        } finally {
+            setAiGeneratingDiagram(false);
+        }
     };
 
     if (loadingInit) return <div className="h-screen w-screen flex items-center justify-center bg-white"><SectionSpinner /></div>;
@@ -501,6 +570,50 @@ export default function SrsDocumentEditorPage() {
                                     <button onClick={() => addListItem(setEditedBusiness, editedBusiness, { ruleId: 'temp-' + Date.now(), ruleDescription: '' })} className="text-primary text-xs font-semibold flex items-center gap-1 hover:underline mt-1">
                                         <span className="material-symbols-outlined text-[16px]">add</span> Add Business Rule
                                     </button>
+                                </div>
+                            </div>
+
+                            <div className="pt-2 border-t border-slate-100 mt-4">
+                                <label className="block text-xs font-bold text-slate-500 uppercase mb-3">1.4 Context Diagram</label>
+                                <div className="flex items-start gap-4 p-4 border border-slate-200 rounded-lg bg-slate-50 relative">
+                                    <div className="w-[180px] h-[120px] bg-white border border-dashed border-slate-300 rounded overflow-hidden flex items-center justify-center shrink-0">
+                                        {uploadingContextDiagram ? (
+                                            <span className="text-sm font-medium text-slate-500 flex items-center gap-2"><span className="material-symbols-outlined animate-spin text-slate-400">progress_activity</span> Syncing...</span>
+                                        ) : editedContextDiagramUrl ? (
+                                            <img src={editedContextDiagramUrl} alt="Context Diagram" className="w-full h-full object-contain" />
+                                        ) : (
+                                            <span className="text-xs text-slate-400 font-medium">No diagram</span>
+                                        )}
+                                    </div>
+                                    <div className="flex-1 space-y-3 pt-1">
+                                        <p className="text-xs text-slate-500 leading-relaxed max-w-[280px]">Upload a high-level context diagram. This update applies directly to the project overview and replaces any existing diagram.</p>
+                                        <div className="flex items-center gap-3">
+                                            <label className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-white border border-slate-300 shadow-sm cursor-pointer hover:bg-slate-50 transition-colors text-sm font-bold text-slate-700">
+                                                <span className="material-symbols-outlined text-[18px]">upload</span>
+                                                Choose File
+                                                <input type="file" accept="image/*" className="hidden" onChange={handleUploadContextDiagram} disabled={uploadingContextDiagram || aiGeneratingDiagram} />
+                                            </label>
+                                            
+                                            <button 
+                                                onClick={handleGenerateAiDiagram}
+                                                disabled={uploadingContextDiagram || aiGeneratingDiagram}
+                                                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-primary text-white shadow-sm hover:bg-primary/90 transition-colors text-sm font-bold disabled:opacity-50"
+                                            >
+                                                {aiGeneratingDiagram ? (
+                                                    <span className="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
+                                                ) : (
+                                                    <span className="material-symbols-outlined text-[18px]">temp_preferences_custom</span>
+                                                )}
+                                                A.I gen
+                                            </button>
+
+                                            {editedContextDiagramUrl && (
+                                                <button onClick={() => setEditedContextDiagramUrl('')} className="text-xs font-bold text-rose-500 hover:text-rose-600 hover:underline">
+                                                    Remove
+                                                </button>
+                                            )}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -656,10 +769,21 @@ export default function SrsDocumentEditorPage() {
                                     ))}
                                 </div>
                             }
+
+                            <h3 className="text-base font-bold text-slate-800 mt-8 mb-4">1.4 Context Diagram</h3>
+                            {editedContextDiagramUrl ? (
+                                <div className="border border-slate-200 rounded-lg overflow-hidden bg-slate-50 p-2 text-center my-4 page-break-inside-avoid">
+                                    <img src={editedContextDiagramUrl} alt="System Context Diagram" className="max-w-full h-auto mx-auto max-h-[500px]" />
+                                    <span className="block mt-2 text-xs text-slate-500 font-bold uppercase tracking-widest">Figure 1. Context Diagram</span>
+                                </div>
+                            ) : (
+                                <p className="text-sm italic text-slate-400 font-sans">Not uploaded</p>
+                            )}
+
                         </section>
 
                         <section className="mb-10">
-                            <h2 className="text-2xl font-bold text-slate-900 mb-5 border-b border-slate-200 pb-2">2. Usecases</h2>
+                            <h2 className="flex items-center justify-between border-b-2 border-slate-800 pb-2 mb-6">2. Usecases</h2>
                             {editedUsecases.length === 0 ? <p className="text-sm italic text-slate-400 font-sans">No usecases defined</p> :
                                 <div className="space-y-6">
                                     {editedUsecases.map((uc, i) => (
@@ -790,9 +914,18 @@ export default function SrsDocumentEditorPage() {
                 usecase={selectedUsecase}
                 businessRules={editedBusiness}
                 functionalRequirements={editedFunctional}
+                projectId={projectId}
                 onClose={() => setShowUsecaseModal(false)}
                 onSave={saveUsecaseFromModal}
             />}
+
+            {showDrawioModal && (
+                <DrawioModal
+                    mermaidSource={aiMermaidSource}
+                    onClose={() => setShowDrawioModal(false)}
+                    onUploadSuccess={(url) => setEditedContextDiagramUrl(url)}
+                />
+            )}
         </div>
     );
 }

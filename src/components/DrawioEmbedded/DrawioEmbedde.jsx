@@ -12,7 +12,7 @@ import { useRef, useEffect, useState } from "react";
  * - Iframe tự động chiếm 100% width và height.
  * - Không cần styling bên trong iframe, chỉ cần styling container/div bao quanh.
  */
-export default function DrawioEmbedded({mermaidSource, onSave}) {
+export default function DrawioEmbedded({mermaidSource, onSave, onExport}) {
     const iframeRef = useRef(null);
     const origin = "https://embed.diagrams.net";
 
@@ -56,8 +56,20 @@ export default function DrawioEmbedded({mermaidSource, onSave}) {
                 // msg.xml chứa XML của sơ đồ [5]
                 if (onSave) onSave({ xml: msg.xml, meta: msg });
 
+                // Nếu `onExport` được cung cấp, ta tự động yêu cầu iframe export hình ảnh
+                if (onExport) {
+                    iframeRef.current?.contentWindow?.postMessage(
+                        JSON.stringify({
+                            action: "export",
+                            format: "png",
+                            spin: "Updating image..."
+                        }),
+                        "*"
+                    );
+                }
+
                 // Nếu muốn đóng sau khi lưu (giả lập hành vi Save & Exit)
-                if (msg.exit) {
+                if (msg.exit && !onExport) {
                     // Xử lý đóng modal/trang tại đây
                 }
             }
@@ -65,13 +77,15 @@ export default function DrawioEmbedded({mermaidSource, onSave}) {
             // 5. Xử lý Export (nếu cần lấy ảnh)
             if (msg.event === "export") {
                 // msg.data chứa data URI (base64) của ảnh [7]
-                console.log("Exported image data:", msg.data);
+                if (onExport && msg.data) {
+                    onExport(msg.data);
+                }
             }
         };
 
         window.addEventListener("message", handler);
         return () => window.removeEventListener("message", handler);
-    }, [mermaidSource, onSave]);
+    }, [mermaidSource, onSave, onExport]);
 
     return (
         <iframe
