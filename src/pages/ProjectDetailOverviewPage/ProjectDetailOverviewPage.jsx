@@ -11,7 +11,8 @@ import {
     getUsecases,
     getFunctionalRequirements,
     getNonFunctionalRequirements,
-    getContextDiagramUrl
+    getContextDiagramUrl,
+    getProjectStats
 } from '../../api/projectService';
 import { parseApiError, logApiError } from '../../api/apiErrorUtils';
 
@@ -69,6 +70,8 @@ const ProjectDetailOverviewPage = () => {
     const [loadingContext, setLoadingContext] = useState(true);
     
     const [contextDiagramUrl, setContextDiagramUrl] = useState('');
+    const [projectStats, setProjectStats] = useState(null);
+    const [loadingStats, setLoadingStats] = useState(true);
 
     const [error, setError] = useState(null);
 
@@ -107,6 +110,7 @@ const ProjectDetailOverviewPage = () => {
         fetchSection(getFunctionalRequirements, setFunctionalReqs, setLoadingFunctional);
         fetchSection(getNonFunctionalRequirements, setNonFunctionalReqs, setLoadingNonFunctional);
         fetchSection(getContextDiagramUrl, setContextDiagramUrl, setLoadingContext);
+        fetchSection(getProjectStats, setProjectStats, setLoadingStats);
     }, [projectId]);
 
     // ── Derived ──────────────────────────────────────────────────────────────
@@ -200,6 +204,45 @@ const ProjectDetailOverviewPage = () => {
                             <p className="text-slate-500 dark:text-slate-400">
                                 All requirement information for this project (read-only). Use SRS Editor to make changes.
                             </p>
+                        </div>
+
+                        {/* Quick links */}
+                        <div className="mb-6">
+                            <h4 className="font-bold text-lg mb-4">Quick Access</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                {[
+                                    { 
+                                        label: 'Members', 
+                                        icon: 'group', 
+                                        path: `/projects/${projectId}/members`, 
+                                        color: 'text-rose-600 bg-rose-50 dark:bg-rose-900/30',
+                                        subtitle: loadingStats ? 'Loading...' : (
+                                            role === 'OWNER' 
+                                                ? `${projectStats?.totalMembers || 0} active, ${projectStats?.pendingInvites || 0} pending` 
+                                                : `${projectStats?.totalMembers || 0} members`
+                                        )
+                                    },
+                                    { label: 'Settings', icon: 'settings', path: `/projects/${projectId}/settings`, color: 'text-slate-600 bg-slate-100 dark:bg-slate-800' },
+                                    { label: 'Export', icon: 'share', path: `/projects/${projectId}/export`, color: 'text-violet-600 bg-violet-50 dark:bg-violet-900/30' },
+                                ].map(item => (
+                                    <button
+                                        key={item.label}
+                                        onClick={() => navigate(item.path)}
+                                        className="flex items-center gap-4 p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-primary/40 hover:shadow-sm transition-all text-left"
+                                    >
+                                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${item.color} shrink-0`}>
+                                            <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
+                                        </div>
+                                        <div className="flex flex-col flex-1">
+                                            <span className="font-semibold text-slate-800 dark:text-slate-200 leading-snug">{item.label}</span>
+                                            {item.subtitle && (
+                                                <span className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{item.subtitle}</span>
+                                            )}
+                                        </div>
+                                        <span className="material-symbols-outlined text-slate-400 ml-auto text-[18px]">chevron_right</span>
+                                    </button>
+                                ))}
+                            </div>
                         </div>
 
                         {/* Project Summary Card */}
@@ -427,29 +470,7 @@ const ProjectDetailOverviewPage = () => {
                             </SectionCard>
                         </div>
 
-                        {/* Quick links */}
-                        <div>
-                            <h4 className="font-bold text-lg mb-4">Quick Access</h4>
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                {[
-                                    { label: 'Members', icon: 'group', path: `/projects/${projectId}/members`, color: 'text-rose-600 bg-rose-50 dark:bg-rose-900/30' },
-                                    { label: 'Settings', icon: 'settings', path: `/projects/${projectId}/settings`, color: 'text-slate-600 bg-slate-100 dark:bg-slate-800' },
-                                    { label: 'Export', icon: 'share', path: `/projects/${projectId}/export`, color: 'text-violet-600 bg-violet-50 dark:bg-violet-900/30' },
-                                ].map(item => (
-                                    <button
-                                        key={item.label}
-                                        onClick={() => navigate(item.path)}
-                                        className="flex items-center gap-4 p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-primary/40 hover:shadow-sm transition-all text-left"
-                                    >
-                                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${item.color}`}>
-                                            <span className="material-symbols-outlined text-[20px]">{item.icon}</span>
-                                        </div>
-                                        <span className="font-semibold text-slate-800 dark:text-slate-200">{item.label}</span>
-                                        <span className="material-symbols-outlined text-slate-400 ml-auto text-[18px]">chevron_right</span>
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
+                        {/* (Quick Links section was moved to top) */}
 
                     </div>
                 )}

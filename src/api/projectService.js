@@ -78,3 +78,47 @@ export const generateAiUsecaseDiagram = async (projectId, payload) => {
     const resp = await api.post(`${BASE}/${projectId}/ai/generate-usecase`, payload);
     return resp.data.mermaidCode;
 };
+
+// ─── Team Management ──────────────────────────────────────────
+export const getProjectStats = async (projectId) => {
+    const resp = await api.get(`${BASE}/${projectId}/stats`);
+    return resp.data;
+};
+
+export const getProjectMembers = async (projectId) => {
+    const resp = await api.get(`${BASE}/${projectId}/members`);
+    return resp.data;
+};
+
+export const getProjectInvitations = async (projectId) => {
+    const resp = await api.get(`${BASE}/${projectId}/invitations`);
+    return resp.data;
+};
+
+export const createInvitation = async (projectId, email) => {
+    const resp = await api.post(`${BASE}/${projectId}/invitations`, { email });
+    return resp.data;
+};
+
+export const removeProjectMember = async (projectId, userId) => {
+    const resp = await api.delete(`${BASE}/${projectId}/members/${userId}`);
+    return resp.data;
+};
+
+export const updateProjectMemberRole = async (projectId, userId, roleName) => {
+    const resp = await api.put(`${BASE}/${projectId}/members/${userId}/role`, { roleName });
+    return resp.data;
+};
+
+// ─── User Invitations ─────────────────────────────────────────
+
+export const getUserInvitations = async () => {
+    // This is explicitly for the logged-in user, under /api/users/me/invitations
+    const resp = await api.get('/api/users/me/invitations');
+    return resp.data; // ResponseUserInvitationDto[]
+};
+
+export const respondToInvitation = async (invitationId, accept) => {
+    const resp = await api.post(`/api/users/me/invitations/${invitationId}/respond`, { accept });
+    return resp.data;
+};
