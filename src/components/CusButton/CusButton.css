@@ -1,0 +1,131 @@
+.base-button {
+  padding: 10px 30px;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font: inherit;
+  max-width: 150px;
+  min-width: 60px;
+  display: flex;
+  justify-content: center;
+  flex-direction: row;
+  align-items: center;
+  gap: 15%;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  user-select: none;  
+}
+
+.base-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.blue-button {
+  background: linear-gradient(90deg, #007bff, #0056b3);
+  color: white;
+}
+
+.blue-button:hover:not(:disabled) {
+  background: linear-gradient(90deg, #0056b3, #003f7f);
+}
+
+.grey-button {
+  background: #3d4450;
+  color: white;
+}
+
+.grey-button:hover:not(:disabled) {
+  background: #2c313a;
+}
+
+.red-button {
+  background: linear-gradient(90deg, #dc3545, #b52a37);
+  color: white;
+}
+
+.red-button:hover:not(:disabled) {
+  background: linear-gradient(90deg, #b52a37, #8e1f2a);
+}
+
+.green-button {
+  background: linear-gradient(90deg, #28a745, #218838);
+  color: white;
+}
+
+.green-button:hover:not(:disabled) {
+  background: linear-gradient(90deg, #218838, #1e7e34);
+}
+
+.white-button {
+  background: white;
+  color: black;
+  border: 1px solid #ccc;
+}
+
+.white-button:hover:not(:disabled) {
+  background: #f0f0f0;
+}
+
+.white-grey-button {
+  background: #f8f9fa;
+  color: #212529;
+  border: 1px solid #ced4da;
+}
+
+.white-grey-button:hover:not(:disabled) {
+  background: #e2e6ea;
+}
+
+.gradient-blue-button {
+  background: linear-gradient(to right, #3ea6ff 5%, #2563eb 95%);
+  color: white;
+}
+
+.gradient-blue-button:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.gradient-green-button {
+  background: linear-gradient(to right, #75b022 5%, #588a1b 95%);
+  color: white;
+}
+
+.gradient-green-button:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.dashed-text-button {
+  background: none;
+  color: black;
+  text-decoration: underline;
+}
+
+.dashed-text-button:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+
+.custom-spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #555;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  vertical-align: middle;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
