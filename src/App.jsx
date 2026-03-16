@@ -40,6 +40,7 @@ import UserProfileSettingsPage from './pages/UserProfileSettingsPage/UserProfile
 import NotificationsPage from './pages/NotificationsPage/NotificationsPage';
 import PaymentCheckoutPage from './pages/PaymentCheckoutPage/PaymentCheckoutPage';
 import PaymentHistoryPage from './pages/PaymentHistoryPage/PaymentHistoryPage';
+import CreatePremiumPlanPage from './pages/CreatePremiumPlanPage/CreatePremiumPlanPage';
 
 function App() {
   return (
@@ -87,6 +88,9 @@ function App() {
           <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
           <Route path="/checkout" element={<ProtectedRoute><PaymentCheckoutPage /></ProtectedRoute>} />
           <Route path="/payment-history" element={<ProtectedRoute><PaymentHistoryPage /></ProtectedRoute>} />
+          
+          {/* Admin Routes */}
+          <Route path="/admin/plans/new" element={<ProtectedRoute><CreatePremiumPlanPage /></ProtectedRoute>} />
         </Routes>
       </Router>
     </AppProvider>
