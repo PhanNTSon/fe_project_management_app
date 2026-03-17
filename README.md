@@ -34,15 +34,23 @@ This is the frontend component of the Project Management Application, built with
 
 ## 🐳 Running via Docker
 
-The entire system (Frontend, Backend, and Database) is orchestrated using Docker Compose. From the **root workspace directory** (one level above this folder), run:
+To run the Frontend application via Docker (served by Nginx), use the included Docker Compose setup:
 
-```bash
-docker-compose up -d --build
-```
+**Important Prerequisites:** 
+You must ensure the Backend API is already running and accessible. By default, the frontend expects it at `http://localhost:8080`.
 
-- The frontend will be served at `http://localhost:3000` via Nginx.
-- To view logs: `docker-compose logs -f frontend`
-- To stop the containers: `docker-compose down`
+1. **Navigate to the root directory of this frontend repository.**
+2. **Configure Environment:** Ensure your `.env` file is present (or the build args in `docker-compose.yml` are correct).
+3. **Run Docker Compose:**
+   ```bash
+   docker-compose up -d --build
+   ```
+
+**Expected Output & Behavior:**
+- Docker will build the Vite app and serve the static files using an `nginx` container.
+- The web application will be accessible at `http://localhost:3000`.
+- To view logs: `docker logs -f fe_project_management-frontend-1` (or whatever your folder prefix is, e.g., `docker-compose logs -f frontend`).
+- To stop the container: `docker-compose down`
 
 ## 🏗️ Building for Production
 
