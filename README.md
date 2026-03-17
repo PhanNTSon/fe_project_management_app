@@ -48,7 +48,7 @@ You must ensure the Backend API is already running and accessible. By default, t
 
 **Expected Output & Behavior:**
 - Docker will build the Vite app and serve the static files using an `nginx` container.
-- The web application will be accessible at `http://localhost:3000`.
+- The web application will be accessible at `http://localhost:5173`.
 - To view logs: `docker logs -f fe_project_management-frontend-1` (or whatever your folder prefix is, e.g., `docker-compose logs -f frontend`).
 - To stop the container: `docker-compose down`
 
