@@ -10,6 +10,6 @@ services:
         - VITE_CLOUDINARY_CLOUD_NAME=${VITE_CLOUDINARY_CLOUD_NAME:-dpqrllotf}
         - VITE_CLOUDINARY_UPLOAD_PRESET=${VITE_CLOUDINARY_UPLOAD_PRESET:-SWD392_Preset}
     ports:
-      - "3000:80"
+      - "5173:80"
     env_file:
       - .env
