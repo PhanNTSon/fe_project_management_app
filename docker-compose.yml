@@ -1,0 +1,15 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: .
+      args:
+        # Default fallback values for the build, can be overridden by .env
+        - VITE_API_URL=${VITE_API_URL:-http://localhost:8080}
+        - VITE_CLOUDINARY_CLOUD_NAME=${VITE_CLOUDINARY_CLOUD_NAME:-dpqrllotf}
+        - VITE_CLOUDINARY_UPLOAD_PRESET=${VITE_CLOUDINARY_UPLOAD_PRESET:-SWD392_Preset}
+    ports:
+      - "3000:80"
+    env_file:
+      - .env
