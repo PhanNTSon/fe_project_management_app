@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { AppContext } from '../../context/AppContext';
 
 const DashboardHeader = () => {
-  const { user, logoutUser } = useContext(AppContext);
+  const { user, logoutUser, pendingInvitations } = useContext(AppContext);
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -26,7 +26,11 @@ const DashboardHeader = () => {
       <div className="flex items-center gap-4">
         <Link to="/notifications" className="p-2 text-slate-500 hover:bg-slate-100 dark:bg-slate-800 rounded-lg relative transition-colors">
           <span className="material-symbols-outlined text-[24px]">notifications</span>
-          <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900"></span>
+          {pendingInvitations > 0 && (
+            <span className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 border-2 border-white dark:border-slate-900">
+              {pendingInvitations > 9 ? '9+' : pendingInvitations}
+            </span>
+          )}
         </Link>
         <Link to="/comments" className="p-2 text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
           <span className="material-symbols-outlined text-[24px]">chat_bubble</span>

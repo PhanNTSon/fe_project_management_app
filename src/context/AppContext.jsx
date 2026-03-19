@@ -1,6 +1,7 @@
-import { createContext, useState, useEffect, useCallback } from "react";
+import { createContext, useState, useEffect, useCallback, useRef } from "react";
 import { refreshToken, getProfile, logout } from "../api/authService";
 import { setAuthToken } from "../api/axiosClient";
+import { connectSSE, disconnectSSE } from "../api/sseService";
 
 export const AppContext = createContext();
 
@@ -8,6 +9,30 @@ export const AppProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [jwt, setJwt] = useState(null);
     const [authLoading, setAuthLoading] = useState(true);
+
+    // ── SSE Notification State ──────────────────────────────────────────────
+    // Số lượng invitation chưa đọc (hiển thị badge)
+    const [pendingInvitations, setPendingInvitations] = useState(0);
+    // Sự kiện SSE gần nhất — pages subscribe để phản hồi real-time
+    const [sseNotification, setSseNotification] = useState(null);
+    // Ref để tránh connect SSE nhiều lần
+    const sseConnected = useRef(false);
+
+    /** Xử lý sự kiện nhận được từ SSE stream */
+    const handleSseEvent = useCallback((eventName, data) => {
+        setSseNotification({ eventName, data, timestamp: Date.now() });
+
+        if (eventName === "INVITATION_RECEIVED") {
+            setPendingInvitations(prev => prev + 1);
+        }
+    }, []);
+
+    /** Kết nối SSE sau khi user đã đăng nhập thành công */
+    const startSseConnection = useCallback((token) => {
+        if (sseConnected.current) return;
+        sseConnected.current = true;
+        connectSSE(token, handleSseEvent);
+    }, [handleSseEvent]);
 
     useEffect(() => {
 
@@ -41,6 +66,9 @@ export const AppProvider = ({ children }) => {
                             isActive: userProfileData.isActive
                         });
                         console.log("[AppContext] User profile loaded:", userProfileData.username);
+
+                        // ✅ Kết nối SSE ngay sau khi user đã được load, truyền token để xác thực
+                        startSseConnection(tokenData.accessToken);
                     }
                 } catch (profileErr) {
                     if (isMounted) {
@@ -76,7 +104,7 @@ export const AppProvider = ({ children }) => {
             console.log("[AppContext] Component cleanup (Strict Mode unmount)");
         };
 
-    }, []);
+    }, [startSseConnection]);
 
     // ✅ Centralized logout: gọi API + xóa token + xóa cookies + reset state
     const logoutUser = useCallback(async () => {
@@ -85,6 +113,12 @@ export const AppProvider = ({ children }) => {
         } catch (err) {
             console.error('[AppContext] Logout API error (safe to ignore):', err);
         } finally {
+            // Ngắt kết nối SSE khi logout
+            disconnectSSE();
+            sseConnected.current = false;
+            setPendingInvitations(0);
+            setSseNotification(null);
+
             // Xóa Bearer token khỏi axios headers
             setAuthToken(null);
             // Xóa tất cả cookies mà frontend có thể đã set (non-httpOnly)
@@ -101,6 +135,11 @@ export const AppProvider = ({ children }) => {
         }
     }, []);
 
+    /** Xóa badge sau khi user đã xem invitations */
+    const clearPendingInvitations = useCallback(() => {
+        setPendingInvitations(0);
+    }, []);
+
     return (
         <AppContext.Provider
             value={{
@@ -109,7 +148,12 @@ export const AppProvider = ({ children }) => {
                 user,
                 setUser,
                 authLoading,
-                logoutUser
+                logoutUser,
+                // SSE
+                pendingInvitations,
+                clearPendingInvitations,
+                sseNotification,
+                startSseConnection,
             }}
         >
             {children}

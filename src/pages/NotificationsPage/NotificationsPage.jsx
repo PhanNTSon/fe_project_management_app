@@ -1,13 +1,15 @@
 import './NotificationsPage.css';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
 import DashboardLayout from '../../components/layout/DashboardLayout';
 import { getUserInvitations, respondToInvitation } from '../../api/projectService';
 import { toast } from 'react-toastify';
+import { AppContext } from '../../context/AppContext';
 
 const NotificationsPage = () => {
   const [invitations, setInvitations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const { clearPendingInvitations, sseNotification } = useContext(AppContext);
 
   const fetchInvitations = async () => {
     try {
@@ -25,7 +27,17 @@ const NotificationsPage = () => {
 
   useEffect(() => {
     fetchInvitations();
+    // Xóa badge khi user mở trang thông báo
+    clearPendingInvitations();
   }, []);
+
+  // Re-fetch khi nhận SSE event mới (INVITATION_RECEIVED)
+  useEffect(() => {
+    if (sseNotification?.eventName === 'INVITATION_RECEIVED') {
+      fetchInvitations();
+      clearPendingInvitations();
+    }
+  }, [sseNotification]);
 
   const handleResponse = async (invitationId, accept) => {
     try {
